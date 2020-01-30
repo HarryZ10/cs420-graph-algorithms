@@ -27,7 +27,7 @@ class UndirectedGraphTest extends FlatSpec
 
 	it should "not have a path" in
 	{
-		val graph = Graph[String](true)
+		val graph = Graph[String](false)
 		val path = Seq("foo", "bar")
 
 		assert(graph.pathLength(path).isEmpty)
@@ -35,7 +35,7 @@ class UndirectedGraphTest extends FlatSpec
 
 	it should "not have a shortest path" in
 	{
-		val graph = Graph[String](true)
+		val graph = Graph[String](false)
 
 		assert(graph.shortestPathBetween("foo", "bar").isEmpty)
 	}
