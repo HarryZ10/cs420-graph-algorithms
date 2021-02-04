@@ -21,7 +21,7 @@ object graph
 		@throws(classOf[IllegalArgumentException])
 		def addVertex(vertex:T):Graph[T]
 		
-		@throws(classOf[NoSuchElementException])
+		@throws(classOf[IllegalArgumentException])
 		def removeVertex(vertex:T):Graph[T]
 		
 		@throws(classOf[IllegalArgumentException])
