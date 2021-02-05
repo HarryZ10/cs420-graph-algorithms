@@ -1,2 +1,2 @@
-# csis430-graph-starter
-A framework for the CSIS430 Graph Class
+# Graph Class
+The CSIS 430 Graph Class
