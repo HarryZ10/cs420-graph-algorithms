@@ -1,8 +1,3 @@
-import java.io.IOException
-
-import scala.xml.XML.loadFile
-import scala.xml.Node
-
 object graph 
 {
 	/*
@@ -91,42 +86,6 @@ object graph
 			def fromCSVFile(isDirected:Boolean, fileName:String):Graph[String] = null
 
 			override def toString:String = "Empty graph..."
-		}
-
-		/*
-		Loads a graph from a TSP file
-		*/
-		def fromTSPFile(fileName:String):Graph[Int] =
-		{
-			//create an empty graph
-			val emptyGraph = Graph[Int](false)
-
-			//load the XML file
-			val tspXML = loadFile(fileName)
-
-			//get all the veritices
-			val vertices = tspXML \\ "vertex"
-
-			//add in all the vertices
-			val graph = Range(0, vertices.size).foldLeft(emptyGraph)((g,v) => g.addVertex(v))
-
-			//add in all the edges - they are part of each xml vertex
-			vertices.zipWithIndex.foldLeft(graph)((g,t) => addXMLEdges(g, t._1, t._2))
-		}
-
-		/*
-		Add in edges assume the vertices exist
-		*/
-		private def addXMLEdges(graph:Graph[Int], xmlEdges:Node, start:Int):Graph[Int] = 
-		{
-			//parse all the edges - tuples of (destination, weight)
-			val edges = (xmlEdges \ "edge").map(e => (e.text.toInt, e.attributes("cost").text.toDouble.toInt))
-
-			//remove the edges that already exist
-			val newEdges = edges.filterNot(e => graph.edgeExists(start, e._1))
-
-			//add in new edges
-			newEdges.foldLeft(graph)((g,e) => g.addEdge(start, e._1, e._2))
 		}
 	}
 
