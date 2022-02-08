@@ -11,6 +11,8 @@ object graph
 
         def getVertices:Iterable[T]
 
+        def getEdges:Iterable[(T,T,Int)]
+
         def edgeExists(source:T, destination:T):Boolean
 
         def getEdgeWeight(source:T, destination:T):Option[Int]
@@ -58,10 +60,17 @@ object graph
             private var edges:List[(T, T, Int)] = List()
 
             /**
-             * Returns true if the graph contains the given vertex
+             * Returns the vertices of the graph
              * @return the list of vertices in the graph
              */
             def getVertices:Iterable[T] = vertices
+
+
+            /**
+             * Gets edges from the graph
+             * @return the list of edges in the graph
+             */
+            def getEdges:Iterable[(T, T, Int)] = edges
 
 
             /**
@@ -78,7 +87,10 @@ object graph
              * @return the weight of the edge between the two given vertices
              */
             def getEdgeWeight(source:T, destination:T):Option[Int] = {
-                edges.find(e => e._1 == source && e._2 == destination).map(_._3)
+                if (edgeExists(source, destination))
+                    Some(edges.filter(e => e._1 == source && e._2 == destination).head._3)
+                else
+                    None
             }
 
 
@@ -133,6 +145,9 @@ object graph
                     throw new IllegalArgumentException("Vertex does not exist")
                 else if (edgeExists(source, destination))
                     throw new IllegalArgumentException("Edge already exists")
+                // else if it's loop
+                else if (source == destination)
+                    throw new IllegalArgumentException("Loop detected")
                 else
                 {
                     edges = (source, destination, weight) :: edges
@@ -208,5 +223,74 @@ object graph
         directedGraph.removeVertex("B")
 
         println(directedGraph)
+
+
+        // add a vertex where the vertex already exists
+        try
+        {
+            directedGraph.addVertex("A")
+        }
+        catch
+        {
+            case e:IllegalArgumentException => println("Vertex already exists")
+        }
+
+        // remove a vertex where the vertex does not exist
+        try
+        {
+            directedGraph.removeVertex("D")
+        }
+        catch
+        {
+            case e:IllegalArgumentException => println("Vertex does not exist")
+        }
+
+        // adding a loop
+        try
+        {
+            directedGraph.addEdge("A", "A", 1)
+        }
+        catch
+        {
+            case e:IllegalArgumentException => println("Loop not allowed")
+        }
+
+        // remove an edge where the edge does not exist
+        try
+        {
+            directedGraph.removeEdge("A", "D")
+        }
+        catch
+        {
+            case e:IllegalArgumentException => println("Edge does not exist")
+        }
+
+        
+        // add an edge where the edge already exists
+        try
+        {
+            directedGraph.addEdge("A", "B", 1)
+        }
+        catch
+        {
+            case e:IllegalArgumentException => println("Edge already exists")
+        }
+
+        directedGraph.addVertex("B")
+
+        directedGraph.addEdge("A", "B", 1)
+
+        // get edge weight
+        println(directedGraph.getEdgeWeight("A", "B"))
+
+
+        // get edge weight where the edge does not exist
+        println(directedGraph.getEdgeWeight("A", "D"))
+
+        // get vertices
+        println(directedGraph.getVertices)
+
+        // get edges
+        println(directedGraph.getEdges)
     }
 }
