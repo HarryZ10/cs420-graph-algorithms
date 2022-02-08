@@ -59,16 +59,37 @@ object graph
 			private var vertices:List[T] = List()
 			private var edges:List[(T, T, Int)] = List()
 
+			/**
+			 * Returns true if the graph contains the given vertex
+			 * @return the list of vertices in the graph
+			 */
 			def getVertices:Iterable[T] = vertices
 
+
+			/**
+			 * Returns true if an edge exists between the two given vertices
+			 * @return true if an edge exists between the two given vertices
+			 */
 			def edgeExists(source:T, destination:T):Boolean = {
 				edges.exists(e => e._1 == source && e._2 == destination)
 			}
 			
+
+			/**
+			 * Returns the weight of the edge between the two given vertices
+			 * @return the weight of the edge between the two given vertices
+			 */
 			def getEdgeWeight(source:T, destination:T):Option[Int] = {
 				edges.find(e => e._1 == source && e._2 == destination).map(_._3)
 			}
 
+
+			/**
+			 * Adds the given vertex to the graph
+			 * 
+			 * @param vertex the vertex to add
+			 * @return the graph with the given vertex added
+			 */
 			def addVertex(vertex:T):Graph[T] = {
 				if (vertices.contains(vertex))
 					throw new IllegalArgumentException("Vertex already exists")
@@ -78,6 +99,13 @@ object graph
 				this
 			}
 			
+
+			/**
+			 * Removes the given vertex from the graph
+			 * 
+			 * @param vertex the vertex to remove
+			 * @return the graph with the given vertex removed
+			 */
 			def removeVertex(vertex:T):Graph[T] = {
 				if (!vertices.contains(vertex))
 					throw new IllegalArgumentException("Vertex does not exist")
@@ -93,6 +121,15 @@ object graph
 				this
 			}
 
+
+			/**
+			 * Adds an edge to the graph
+			 * 
+			 * @param source the source vertex
+			 * @param destination the destination vertex
+			 * @param weight the weight of the edge
+			 * @return the graph with the edge added
+			 */
 			def addEdge(source:T, destination:T, weight:Int):Graph[T] = {
 				if (!vertices.contains(source) || !vertices.contains(destination))
 					throw new IllegalArgumentException("Vertex does not exist")
@@ -108,6 +145,14 @@ object graph
 				this
 			}
 
+
+			/**
+			 * Removes the edge between the two given vertices
+			 * 
+			 * @param source the source vertex
+			 * @param destination the destination vertex
+			 * @return the graph with the edge removed
+			 */
 			def removeEdge(source:T, destination:T):Graph[T] = {
 				if (!vertices.contains(source) || !vertices.contains(destination))
 					throw new IllegalArgumentException("Vertex does not exist")
@@ -124,6 +169,12 @@ object graph
 				this
 			}
 
+
+			/**
+			 * Returns a string representation of the graph
+			 *
+			 * @return a string representation of the graph
+			 */
 			override def toString:String = {
 				val sb = new StringBuilder
 				sb.append("Vertices: ")
