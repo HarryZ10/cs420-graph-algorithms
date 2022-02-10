@@ -40,10 +40,14 @@ object graph
         /*
         Creates and returns a new empty Graph - acts as a constructor
         */
-        def apply[T](isDirected:Boolean):Graph[T] =
+        def apply[T](
+            isDirected: Boolean,
+            vertices: IndexedSeq[T],
+            edges: Seq[(T,T,Int)]
+            ): Graph[T] =
         {
-            //then pass them in as arguments to GraphImpl
-            new GraphImpl[T](isDirected)
+            
+            new GraphImpl(isDirected, vertices, edges)
         }
 
 
@@ -54,17 +58,17 @@ object graph
          * @tparam T the type of the vertices
          * @author hzhu20@georgefox.edu
          */
-        private class GraphImpl[T] (val isDirected:Boolean) extends Graph[T]
+        private class GraphImpl[T] (
+            val isDirected:Boolean,
+            val vertices: IndexedSeq[T],
+            val edges: Seq[(T,T,Int)]
+        ) extends Graph[T]
         {
-            private var vertices:List[T] = List()
-            private var edges:List[(T, T, Int)] = List()
-
             /**
              * Returns the vertices of the graph
              * @return the list of vertices in the graph
              */
             def getVertices:Iterable[T] = vertices
-
 
             /**
              * Gets edges from the graph
@@ -78,7 +82,7 @@ object graph
              * @return true if an edge exists between the two given vertices
              */
             def edgeExists(source:T, destination:T):Boolean = {
-                edges.exists(e => e._1 == source && e._2 == destination)
+                edges.exists(edge => edge._1 == source && edge._2 == destination)
             }
 
 
@@ -87,10 +91,15 @@ object graph
              * @return the weight of the edge between the two given vertices
              */
             def getEdgeWeight(source:T, destination:T):Option[Int] = {
+                
                 if (edgeExists(source, destination))
-                    Some(edges.filter(e => e._1 == source && e._2 == destination).head._3)
+                {
+                    Some(edges.filter(edge => edge._1 == source && edge._2 == destination).head._3)
+                }
                 else
+                {
                     None
+                }
             }
 
 
@@ -101,12 +110,15 @@ object graph
              * @return the graph with the given vertex added
              */
             def addVertex(vertex:T):Graph[T] = {
-                if (vertices.contains(vertex))
-                    throw new IllegalArgumentException("Vertex already exists")
-                else
-                    vertices = vertex :: vertices
 
-                this
+                if (vertices.contains(vertex))
+                {
+                    throw new IllegalArgumentException("Vertex already exists")
+                }
+                else
+                {
+                    apply(isDirected, vertices :+ vertex, edges)
+                }
             }
 
 
@@ -117,18 +129,17 @@ object graph
              * @return the graph with the given vertex removed
              */
             def removeVertex(vertex:T):Graph[T] = {
-                if (!vertices.contains(vertex))
-                    throw new IllegalArgumentException("Vertex does not exist")
+            
+                if (vertices.contains(vertex))
+                {
+                    val newVertices = vertices.filter(v => v != vertex)
+                    val newEdges = edges.filter(edge => !(edge._1 == vertex || edge._2 == vertex))
+                    apply(isDirected, newVertices, newEdges)
+                }
                 else
                 {
-                    // remove vertex
-                    vertices = vertices.filterNot(_ == vertex)
-
-                    // remove edges that have this vertex as a source or destination
-                    edges = edges.filterNot(e => e._1 == vertex || e._2 == vertex)
+                    throw new IllegalArgumentException("Vertex does not exist")
                 }
-
-                this
             }
 
 
@@ -141,21 +152,27 @@ object graph
              * @return the graph with the edge added
              */
             def addEdge(source:T, destination:T, weight:Int):Graph[T] = {
-                if (!vertices.contains(source) || !vertices.contains(destination))
-                    throw new IllegalArgumentException("Vertex does not exist")
-                else if (edgeExists(source, destination))
-                    throw new IllegalArgumentException("Edge already exists")
-                // else if it's loop
-                else if (source == destination)
-                    throw new IllegalArgumentException("Loop detected")
+
+                if (vertices.contains(source) && vertices.contains(destination))
+                {
+                    if (edgeExists(source, destination))
+                    {
+                        throw new IllegalArgumentException("Edge already exists")
+                    }
+                    else if (source == destination)
+                    {
+                        throw new IllegalArgumentException("Loops are not allowed")
+                    }
+                    else
+                    {
+                        val newEdges = edges :+ (source, destination, weight)
+                        apply(isDirected, vertices, newEdges)
+                    }
+                }
                 else
                 {
-                    edges = (source, destination, weight) :: edges
-                    if (!isDirected)
-                        edges = (destination, source, weight) :: edges
+                    throw new IllegalArgumentException("One or both vertices do not exist")
                 }
-
-                this
             }
 
 
@@ -167,19 +184,23 @@ object graph
              * @return the graph with the edge removed
              */
             def removeEdge(source:T, destination:T):Graph[T] = {
-                if (!vertices.contains(source) || !vertices.contains(destination))
-                    throw new IllegalArgumentException("Vertex does not exist")
-                else if (!edgeExists(source, destination))
-                    throw new IllegalArgumentException("Edge does not exist")
+
+                if (vertices.contains(source) && vertices.contains(destination))
+                {
+                    if (edgeExists(source, destination))
+                    {
+                        val newEdges = edges.filter(edge => !(edge._1 == source && edge._2 == destination))
+                        apply(isDirected, vertices, newEdges)
+                    }
+                    else
+                    {
+                        throw new IllegalArgumentException("Edge does not exist")
+                    }
+                }
                 else
                 {
-                    edges = edges.filterNot(e => e._1 == source && e._2 == destination)
-                    if (!isDirected)
-                        edges = edges.filterNot(e => e._1 == destination && e._2 == source)
+                    throw new IllegalArgumentException("One or both vertices do not exist")
                 }
-
-                // return this graph
-                this
             }
 
 
@@ -189,12 +210,19 @@ object graph
              * @return a string representation of the graph
              */
             override def toString:String = {
+                // print the whole graph
                 val sb = new StringBuilder
+                
+                val vertices = getVertices
+                val edges = getEdges
+
                 sb.append("Vertices: ")
-                vertices.foreach(v => sb.append(v + ", "))
+                sb.append(vertices.mkString(", "))
+
                 sb.append("\nEdges: ")
-                edges.foreach(e => sb.append(e._1 + " -> " + e._2 + ", "))
-                sb.toString
+                sb.append(edges.mkString(", "))
+
+                sb.toString()
             }
         }
     }
@@ -202,33 +230,38 @@ object graph
     def main(args:Array[String])
     {
         //create an empty graph
-        val undirectedGraph = Graph[String](false)
+        var undirectedGraph = Graph[String](false, IndexedSeq(), Seq())
 
         //add some vertices of type String
-        undirectedGraph.addVertex("A").addVertex("B").addVertex("C")
+        undirectedGraph = undirectedGraph.addVertex("A").addVertex("B").addVertex("C").addVertex("D")
+        // println(undirectedGraph.getVertices.toString)
 
         //add some edges of type String
-        undirectedGraph.addEdge("A", "B", 1).addEdge("A", "C", 2)
+        undirectedGraph = undirectedGraph.addEdge("A", "B", 1).addEdge("A", "C", 2).addEdge("B", "C", 3).addEdge("C", "D", 4)
 
         //print the graph
         println(undirectedGraph)
 
-        val directedGraph = Graph[String](true)
+        var directedGraph = Graph[String](true, IndexedSeq(), Seq())
 
-        directedGraph.addVertex("A").addVertex("B").addVertex("C")
+        //add some vertices of type String
+        directedGraph = directedGraph.addVertex("A").addVertex("B").addVertex("C").addVertex("D")
 
-        directedGraph.addEdge("A", "B", 1).addEdge("A", "C", 2)
-
+        //add some edges of type String
+        directedGraph = directedGraph.addEdge("A", "B", 1).addEdge("B", "A", 2).addEdge("A", "C", 3).addEdge("C", "A", 4)
+        println(directedGraph)
+       
         // remove a vertex
-        directedGraph.removeVertex("B")
+        directedGraph = directedGraph.removeVertex("B")
 
+        // print the graph
         println(directedGraph)
 
 
         // add a vertex where the vertex already exists
         try
         {
-            directedGraph.addVertex("A")
+            directedGraph = directedGraph.addVertex("A")
         }
         catch
         {
@@ -238,7 +271,7 @@ object graph
         // remove a vertex where the vertex does not exist
         try
         {
-            directedGraph.removeVertex("D")
+            directedGraph = directedGraph.removeVertex("H")
         }
         catch
         {
@@ -248,7 +281,7 @@ object graph
         // adding a loop
         try
         {
-            directedGraph.addEdge("A", "A", 1)
+            directedGraph = directedGraph.addEdge("A", "A", 1)
         }
         catch
         {
@@ -258,7 +291,7 @@ object graph
         // remove an edge where the edge does not exist
         try
         {
-            directedGraph.removeEdge("A", "D")
+            directedGraph = directedGraph.removeEdge("A", "D")
         }
         catch
         {
@@ -269,28 +302,26 @@ object graph
         // add an edge where the edge already exists
         try
         {
-            directedGraph.addEdge("A", "B", 1)
+            directedGraph = directedGraph.addEdge("A", "B", 1)
         }
         catch
         {
             case e:IllegalArgumentException => println("Edge already exists")
         }
 
-        directedGraph.addVertex("B")
+        directedGraph = directedGraph.addVertex("B")
 
-        directedGraph.addEdge("A", "B", 1)
+        directedGraph = directedGraph.addEdge("B", "A", 2)
+        directedGraph = directedGraph.addEdge("A", "B", 30)
 
         // get edge weight
-        println(directedGraph.getEdgeWeight("A", "B"))
-
-
-        // get edge weight where the edge does not exist
-        println(directedGraph.getEdgeWeight("A", "D"))
+        println(directedGraph.getEdgeWeight("A", "B").get)
+        println(directedGraph.getEdgeWeight("B", "A").get)
 
         // get vertices
-        println(directedGraph.getVertices)
+        println(directedGraph.getVertices.toString)
 
         // get edges
-        println(directedGraph.getEdges)
+        println(directedGraph.getEdges.toString)
     }
 }
