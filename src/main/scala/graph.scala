@@ -40,12 +40,10 @@ object graph
         /*
         Creates and returns a new empty Graph - acts as a constructor
         */
-        def apply[T](
-            isDirected: Boolean,
-            vertices: IndexedSeq[T],
-            edges: Seq[(T,T,Int)]
-            ): Graph[T] =
+        def apply[T](isDirected: Boolean): Graph[T] =
         {
+            val vertices: IndexedSeq[T] = IndexedSeq[T]()
+            val edges: Seq[(T,T,Int)] = Seq[(T,T,Int)]()
             
             new GraphImpl(isDirected, vertices, edges)
         }
@@ -117,7 +115,7 @@ object graph
                 }
                 else
                 {
-                    apply(isDirected, vertices :+ vertex, edges)
+                    new GraphImpl(isDirected, vertices :+ vertex, edges)
                 }
             }
 
@@ -134,7 +132,7 @@ object graph
                 {
                     val newVertices = vertices.filter(v => v != vertex)
                     val newEdges = edges.filter(edge => !(edge._1 == vertex || edge._2 == vertex))
-                    apply(isDirected, newVertices, newEdges)
+                    new GraphImpl(isDirected, newVertices, newEdges)
                 }
                 else
                 {
@@ -166,7 +164,7 @@ object graph
                     else
                     {
                         val newEdges = edges :+ (source, destination, weight)
-                        apply(isDirected, vertices, newEdges)
+                        new GraphImpl(isDirected, vertices, newEdges)
                     }
                 }
                 else
@@ -190,7 +188,7 @@ object graph
                     if (edgeExists(source, destination))
                     {
                         val newEdges = edges.filter(edge => !(edge._1 == source && edge._2 == destination))
-                        apply(isDirected, vertices, newEdges)
+                        new GraphImpl(isDirected, vertices, newEdges)
                     }
                     else
                     {
@@ -230,7 +228,7 @@ object graph
     def main(args:Array[String])
     {
         //create an empty graph
-        var undirectedGraph = Graph[String](false, IndexedSeq(), Seq())
+        var undirectedGraph = Graph[String](false)
 
         //add some vertices of type String
         undirectedGraph = undirectedGraph.addVertex("A").addVertex("B").addVertex("C").addVertex("D")
@@ -242,7 +240,7 @@ object graph
         //print the graph
         println(undirectedGraph)
 
-        var directedGraph = Graph[String](true, IndexedSeq(), Seq())
+        var directedGraph = Graph[String](true)
 
         //add some vertices of type String
         directedGraph = directedGraph.addVertex("A").addVertex("B").addVertex("C").addVertex("D")
