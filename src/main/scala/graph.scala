@@ -113,6 +113,10 @@ object graph
                 {
                     throw new IllegalArgumentException("Vertex already exists")
                 }
+                else if (vertex == null)
+                {
+                    throw new IllegalArgumentException("Vertex can't be null!")
+                }
                 else
                 {
                     new GraphImpl(isDirected, vertices :+ vertex, edges)
@@ -127,11 +131,21 @@ object graph
              * @return the graph with the given vertex removed
              */
             def removeVertex(vertex:T):Graph[T] = {
-            
+
+                if (vertex == null)
+                {
+                    throw new IllegalArgumentException("Vertex can't be null!")
+                }
+
                 if (vertices.contains(vertex))
                 {
+                    // remove all edges that contain the vertex
+                    val newEdges = edges.filter(edge => edge._1 != vertex && edge._2 != vertex)
+
+                    // remove the vertex
                     val newVertices = vertices.filter(v => v != vertex)
-                    val newEdges = edges.filter(edge => !(edge._1 == vertex || edge._2 == vertex))
+
+                    // create a new graph
                     new GraphImpl(isDirected, newVertices, newEdges)
                 }
                 else
@@ -151,6 +165,11 @@ object graph
              */
             def addEdge(source:T, destination:T, weight:Int):Graph[T] = {
 
+                if (source == null && destination == null)
+                {
+                    throw new IllegalArgumentException("Null arguments not allowed")
+                }
+
                 if (vertices.contains(source) && vertices.contains(destination))
                 {
                     if (edgeExists(source, destination))
@@ -163,8 +182,14 @@ object graph
                     }
                     else
                     {
-                        val newEdges = edges :+ (source, destination, weight)
-                        new GraphImpl(isDirected, vertices, newEdges)
+                        if (!isDirected)
+                        {
+                            val newEdges = edges :+ (source, destination, weight) :+ (destination, source, weight)
+                            new GraphImpl(isDirected, vertices, newEdges)
+                        } else {
+                            val newEdges = edges :+ (source, destination, weight)
+                            new GraphImpl(isDirected, vertices, newEdges)
+                        }
                     }
                 }
                 else
