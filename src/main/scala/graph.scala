@@ -139,13 +139,12 @@ object graph
 
                 if (vertices.contains(vertex))
                 {
-                    // remove all edges that contain the vertex
+                    // if the vertex is in any edges, remove them
                     val newEdges = edges.filter(edge => edge._1 != vertex && edge._2 != vertex)
 
-                    // remove the vertex
+                    // remove the vertex from the list of vertices
                     val newVertices = vertices.filter(v => v != vertex)
 
-                    // create a new graph
                     new GraphImpl(isDirected, newVertices, newEdges)
                 }
                 else
@@ -212,8 +211,23 @@ object graph
                 {
                     if (edgeExists(source, destination))
                     {
-                        val newEdges = edges.filter(edge => !(edge._1 == source && edge._2 == destination))
-                        new GraphImpl(isDirected, vertices, newEdges)
+                        if (!isDirected)
+                        {
+                            // only remove the edge from the source to the destination and
+                            // the edge from the destination to the source
+
+                            val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
+                            val newEdges2 = newEdges.filterNot(edge => edge._1 == destination && edge._2 == source)
+
+
+
+                            new GraphImpl(isDirected, vertices, newEdges2)
+                        }
+                        else
+                        {
+                            val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
+                            new GraphImpl(isDirected, vertices, newEdges)
+                        }
                     }
                     else
                     {
@@ -263,88 +277,27 @@ object graph
         undirectedGraph = undirectedGraph.addEdge("A", "B", 1).addEdge("A", "C", 2).addEdge("B", "C", 3).addEdge("C", "D", 4)
 
         //print the graph
-        println(undirectedGraph)
+        println(undirectedGraph + " first test pass?")
+
+        //remove an edge
+        undirectedGraph = undirectedGraph.removeEdge("A", "C")
+
+        //print the graph
+        println(undirectedGraph + " remove edge test pass?")
+
+        //remove a vertex
+        undirectedGraph = undirectedGraph.removeVertex("A")
+
+        //print the graph
+        println(undirectedGraph + " remove vertex test pass?")
 
         var directedGraph = Graph[String](true)
 
-        //add some vertices of type String
         directedGraph = directedGraph.addVertex("A").addVertex("B").addVertex("C").addVertex("D")
+        directedGraph = directedGraph.addEdge("A", "B", 1).addEdge("A", "C", 2).addEdge("B", "C", 3).addEdge("C", "D", 4)
+        directedGraph = directedGraph.removeEdge("A", "C")
 
-        //add some edges of type String
-        directedGraph = directedGraph.addEdge("A", "B", 1).addEdge("B", "A", 2).addEdge("A", "C", 3).addEdge("C", "A", 4)
-        println(directedGraph)
-       
-        // remove a vertex
-        directedGraph = directedGraph.removeVertex("B")
-
-        // print the graph
-        println(directedGraph)
-
-
-        // add a vertex where the vertex already exists
-        try
-        {
-            directedGraph = directedGraph.addVertex("A")
-        }
-        catch
-        {
-            case e:IllegalArgumentException => println("Vertex already exists")
-        }
-
-        // remove a vertex where the vertex does not exist
-        try
-        {
-            directedGraph = directedGraph.removeVertex("H")
-        }
-        catch
-        {
-            case e:IllegalArgumentException => println("Vertex does not exist")
-        }
-
-        // adding a loop
-        try
-        {
-            directedGraph = directedGraph.addEdge("A", "A", 1)
-        }
-        catch
-        {
-            case e:IllegalArgumentException => println("Loop not allowed")
-        }
-
-        // remove an edge where the edge does not exist
-        try
-        {
-            directedGraph = directedGraph.removeEdge("A", "D")
-        }
-        catch
-        {
-            case e:IllegalArgumentException => println("Edge does not exist")
-        }
-
+        println(directedGraph + " remove edge test pass?")
         
-        // add an edge where the edge already exists
-        try
-        {
-            directedGraph = directedGraph.addEdge("A", "B", 1)
-        }
-        catch
-        {
-            case e:IllegalArgumentException => println("Edge already exists")
-        }
-
-        directedGraph = directedGraph.addVertex("B")
-
-        directedGraph = directedGraph.addEdge("B", "A", 2)
-        directedGraph = directedGraph.addEdge("A", "B", 30)
-
-        // get edge weight
-        println(directedGraph.getEdgeWeight("A", "B").get)
-        println(directedGraph.getEdgeWeight("B", "A").get)
-
-        // get vertices
-        println(directedGraph.getVertices.toString)
-
-        // get edges
-        println(directedGraph.getEdges.toString)
     }
 }
