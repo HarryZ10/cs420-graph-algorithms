@@ -349,8 +349,9 @@ object graph
              * or None if no path exists
              */
             def shortestPathBetween(source:T, destination:T): Option[Seq[Edge[T]]] = {
-
-                if (source == null || destination == null) throw new IllegalArgumentException("Null arguments not allowed")
+                // if (source == destination) return Some(Seq[Edge[T]](new Edge[T](source, destination, 0)))
+                if ((source == null || destination == null) || source == destination)
+                    throw new IllegalArgumentException("Path does not exist")
 
                 // create a mutable map of vertices and their distances from the source
                 val distances = Map[T, Long]()
@@ -450,37 +451,48 @@ object graph
         var undirectedGraph = Graph[String](false)
 
         //add some vertices of type String
-        undirectedGraph = undirectedGraph.addVertex("A")
-                                         .addVertex("B")
-                                         .addVertex("C")
-                                         .addVertex("D")
-                                         .addVertex("E")
-                                         .addVertex("F")
-                                         .addVertex("G")
-        // println(undirectedGraph.getVertices.toString)
+        undirectedGraph = undirectedGraph.addVertex("1")
+                                         .addVertex("2")
+                                         .addVertex("3")
+                                         .addVertex("4")
+                                         .addVertex("5")
+                                         .addVertex("6")
+                                         .addVertex("7")
 
         //add some edges of type String
-        undirectedGraph = undirectedGraph.addEdge("A", "B", 1).addEdge("A", "F", 2).addEdge("B", "E", 3).addEdge("C", "D", 4).addEdge("E", "G", 1).addEdge("F", "G", 1).addEdge("E", "D", 1)
+        undirectedGraph = undirectedGraph.addEdge("1", "2", 1200)
+                                          .addEdge("1", "3", 100)
+                                          .addEdge("1", "7", 120)
+                                          .addEdge("2", "4", 12)
+                                          .addEdge("2", "3", 8)
+                                          .addEdge("7", "3", 9)
+                                          .addEdge("5", "7", 7)
+                                          .addEdge("7", "6", 90)
+                                          .addEdge("4", "3", 11)
+                                          .addEdge("5", "4", 11)
+                                          .addEdge("6", "5", 6)
+                                          .addEdge("3", "5", 500)
+                                             
 
         // undirectedGraph = undirectedGraph.removeEdge("D", "C")
 
 
         // shortest path between A and D
-        val path = undirectedGraph.shortestPathBetween("A", "G")
+        val path = undirectedGraph.shortestPathBetween("1", "1")
         println(path)
 
         //get path length
-        var path2: Seq[String] = Seq("A", "F", "G")
+        var path2: Seq[String] = Seq("1", "2", "4", "3","7")
         val length = undirectedGraph.pathLength(path2)
         println(length)
 
         // get adjacent vertices
-        val adjacent = undirectedGraph.getAdjacent("G")
+        val adjacent = undirectedGraph.getAdjacent("3")
         println(adjacent)
 
-        val undirectedGraph_fromCSVFile = Graph.fromCSVFile(false, "/Users/ctoakstudent/Desktop/GFU/CSIS430/graph/src/main/Example.csv")
+        // val undirectedGraph_fromCSVFile = Graph.fromCSVFile(false, "/Users/ctoakstudent/Desktop/GFU/CSIS430/graph/src/main/Example.csv")
         
-        // print the whole graph
-        println(undirectedGraph_fromCSVFile.toString)
+        // // print the whole graph
+        // println(undirectedGraph_fromCSVFile.toString)
     }
 }
