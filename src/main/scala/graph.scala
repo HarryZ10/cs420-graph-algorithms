@@ -1,8 +1,9 @@
 import java.io.IOException
+import java.io.File
+import java.util.Scanner
+
 import scala.collection.mutable.Map
 import scala.collection.mutable.Set
-import scala.collection.mutable.PriorityQueue
-
 
 object graph
 {
@@ -67,6 +68,45 @@ object graph
             val vertices: IndexedSeq[T] = IndexedSeq[T]()
             val edges: Seq[(T,T,Int)] = Seq[(T,T,Int)]()
             
+            new GraphImpl(isDirected, vertices, edges)
+        }
+
+
+        /**
+         * Create a graph from a CSV file
+         * 
+         * <# of vertices>
+         * <first vertex>
+         * <second vertex>
+         * ...
+         * <nth vertex>
+         * <# of edges>
+         * <source>,<destination>,<weight>
+         * <source>,<destination>,<weight>
+         */
+        def fromCSVFile(isDirected:Boolean, fileName:String):Graph[String] =
+        {
+            // use scanner to read the file
+            val scanner = new Scanner(new File(fileName))
+
+            // read the number of vertices
+            val numVertices = scanner.nextLine().toInt
+
+            // read the vertices
+            val vertices = (1 to numVertices).map(i => scanner.nextLine())
+
+            // read the number of edges
+            val numEdges = scanner.nextLine().toInt
+
+            // read the edges
+            val edges = (1 to numEdges).map(i =>
+            {
+                val edge = scanner.nextLine().split(",")
+                (edge(0), edge(1), edge(2).toInt)
+            })
+
+            scanner.close()
+
             new GraphImpl(isDirected, vertices, edges)
         }
 
@@ -286,7 +326,8 @@ object graph
 
                     // check if edge exists then add weight to length
                     // otherwise there is no path thus return None
-                    if (edgeExists(source, destination)) length += getEdgeWeight(source, destination).get
+                    if (edgeExists(source, destination))
+                        length += getEdgeWeight(source, destination).get
                     else return None
 
                     // keep going until we reach the end of the path
@@ -323,6 +364,8 @@ object graph
 
                 // while visited size is less than the number of vertices
                 while (visited.size < vertices.length) {
+
+                    if (distances.size == 0 || distances.size == 1) return None
 
                     // extract the vertex with the smallest distance from the distances
                     // map that has not been visited
@@ -414,22 +457,26 @@ object graph
         // add more
         undirectedGraph = undirectedGraph.addEdge("B", "D", 5)
                                          .addEdge("D", "E", 21)
-                                         .addEdge("E", "F", 5)
-                                         .addEdge("F", "G", 10)
-                                         .addEdge("G", "A", 110)
+
 
 
         // shortest path between A and D
-        val path = undirectedGraph.shortestPathBetween("A", "G").get
+        val path = undirectedGraph.shortestPathBetween("A", "G")
         println(path)
 
         //get path length
-        var path2: Seq[String] = Seq("A", "B", "D", "E", "F", "G")
-        val length = undirectedGraph.pathLength(path2).get
+        var path2: Seq[String] = Seq("A", "G")
+        val length = undirectedGraph.pathLength(path2)
         println(length)
 
         // get adjacent vertices
-        val adjacent = undirectedGraph.getAdjacent("A")
+        val adjacent = undirectedGraph.getAdjacent("G")
         println(adjacent)
+
+
+        val undirectedGraph_fromCSVFile = Graph.fromCSVFile(false, "/Users/ctoakstudent/Desktop/GFU/CSIS430/graph/src/main/Example.csv")
+        
+        // print the whole graph
+        println(undirectedGraph_fromCSVFile.toString)
     }
 }
