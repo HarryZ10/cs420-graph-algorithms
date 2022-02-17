@@ -367,36 +367,35 @@ object graph
                 // push the source vertex into the previous map with placeholder
                 previous += (source -> destination)
 
-
-                // if visited size is less than 0, then there is no path
-                if (distances.isEmpty) return None
-                
-                // if the distance is 1, then we have found the destination
-                if (distances.size == 2) return Some(Seq[Edge[T]](new Edge[T](source, destination, getEdgeWeight(source, destination).getOrElse(0))))
-
                 // while visited size is less than the number of vertices
                 while (visited.size < vertices.length) {
 
-                    // get the vertex with the smallest distance
-                    val closest = findClosest(distances, visited): T
+                    // extract the vertex with the smallest distance from the distances
+                    // map that has not been visited
+                    try {
+                        val closest = distances.filter(distance => !visited.contains(distance._1)).minBy(_._2)._1
 
-                    // add the closest vertex to the visited set
-                    visited += closest
+                        // add the closest vertex to the visited set
+                        visited += closest
 
-                    // for other in graph.adjacent(current) and other not in visited do
-                    for (other <- getAdjacent(closest) if !visited.contains(other)) {
+                        // for other in graph.adjacent(current) and other not in visited do
+                        for (other <- getAdjacent(closest) if !visited.contains(other)) {
 
-                        // newDist = graph.edgeW eight(current, other) + dist(current)
-                        val newDist = getEdgeWeight(closest, other).get + distances(closest)
+                            // newDist = graph.edgeW eight(current, other) + dist(current)
+                            var newDist = getEdgeWeight(closest, other).get + distances(closest)
 
-                        if (newDist < distances.getOrElse(other, Long.MaxValue) || !distances.contains(other)) {
+                            if (newDist < distances.getOrElse(other, Long.MaxValue) || !distances.contains(other)) {
 
-                            // dist.push(other, newDist)
-                            distances += (other -> newDist)
+                                // dist.push(other, newDist)
+                                distances += (other -> newDist)
 
-                            // parent.push(other, current)
-                            previous += (other -> closest)
+                                // parent.push(other, current)
+                                previous += (other -> closest)
+                            }
                         }
+                    }
+                    catch {
+                        case e: UnsupportedOperationException => throw new IllegalArgumentException("Graph is not connected.")
                     }
                 }
 
@@ -418,40 +417,7 @@ object graph
                 path = source +: path
 
                 // return edge list of the path
-                return Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toIndexedSeq)
-            }
-
-
-            /**
-             * Returns the vertex with the smallest distance from the source
-             */
-            def findClosest(distances: Map[T, Long], visited: Set[T]): T = {
-
-                // get the first vertex in the map
-                var first = distances.head
-
-                // get the smallest distance
-                var smallest = first._2
-
-                // get the vertex with the smallest distance
-                var vertex = first._1
-
-                // for each vertex in the map
-                for (v <- distances) {
-
-                    // if the distance is less than the smallest distance
-                    if (v._2 < smallest && !visited.contains(v._1)) {
-
-                        // smallest = distance
-                        smallest = v._2
-
-                        // vertex = vertex
-                        vertex = v._1
-                    }
-                }
-
-                // return the vertex with the smallest distance
-                vertex
+                Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toIndexedSeq)
             }
 
 
@@ -491,22 +457,20 @@ object graph
                                          .addVertex("E")
                                          .addVertex("F")
                                          .addVertex("G")
+        // println(undirectedGraph.getVertices.toString)
 
         //add some edges of type String
-        undirectedGraph = undirectedGraph.addEdge("A", "B", 1)
-                                         .addEdge("A", "C", 2)
-                                         .addEdge("B", "C", 3)
-                                         .addEdge("C", "D", 4)
-                                         .addEdge("B", "D", 5)
-                                         .addEdge("D", "E", 21)
-                                         .addEdge("B", "G", 202)
+        undirectedGraph = undirectedGraph.addEdge("A", "B", 1).addEdge("A", "F", 2).addEdge("B", "E", 3).addEdge("C", "D", 4).addEdge("E", "G", 1).addEdge("F", "G", 1).addEdge("E", "D", 1)
+
+        // undirectedGraph = undirectedGraph.removeEdge("D", "C")
+
 
         // shortest path between A and D
         val path = undirectedGraph.shortestPathBetween("A", "G")
         println(path)
 
         //get path length
-        var path2: Seq[String] = Seq("A", "C", "D", "E", "G")
+        var path2: Seq[String] = Seq("A", "F", "G")
         val length = undirectedGraph.pathLength(path2)
         println(length)
 
