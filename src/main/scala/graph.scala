@@ -333,7 +333,7 @@ object graph
 
                     // for other in graph.adjacent(current) and other not in visited do
                     for (other <- getAdjacent(closest) if !visited.contains(other)) {
-                        
+
                         // newDist = graph.edgeW eight(current, other) + dist(current)
                         var newDist = getEdgeWeight(closest, other).get + distances(closest)
 
