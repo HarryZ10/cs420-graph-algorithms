@@ -86,28 +86,33 @@ object graph
          */
         def fromCSVFile(isDirected:Boolean, fileName:String):Graph[String] =
         {
-            // use scanner to read the file
-            val scanner = new Scanner(new File(fileName))
+            try {
+                // use scanner to read the file
+                val scanner = new Scanner(new File(fileName))
 
-            // read the number of vertices
-            val numVertices = scanner.nextLine().toInt
+                // read the number of vertices
+                val numVertices = scanner.nextLine().toInt
 
-            // read the vertices
-            val vertices = (1 to numVertices).map(i => scanner.nextLine())
+                // read the vertices
+                val vertices = (1 to numVertices).map(i => scanner.nextLine())
 
-            // read the number of edges
-            val numEdges = scanner.nextLine().toInt
+                // read the number of edges
+                val numEdges = scanner.nextLine().toInt
 
-            // read the edges
-            val edges = (1 to numEdges).map(i =>
-            {
-                val edge = scanner.nextLine().split(",")
-                (edge(0), edge(1), edge(2).toInt)
-            })
+                // read the edges
+                val edges = (1 to numEdges).map(i =>
+                {
+                    val edge = scanner.nextLine().split(",")
+                    (edge(0), edge(1), edge(2).toInt)
+                })
 
-            scanner.close()
+                scanner.close()
 
-            new GraphImpl(isDirected, vertices, edges)
+                new GraphImpl(isDirected, vertices, edges)
+            }
+            catch {
+                case e:Exception => throw new IOException("Error reading file " + fileName)
+            }
         }
 
 
