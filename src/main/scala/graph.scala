@@ -1,4 +1,8 @@
 import java.io.IOException
+import scala.collection.mutable.Map
+import scala.collection.mutable.Set
+import scala.collection.mutable.PriorityQueue
+
 
 object graph
 {
@@ -29,17 +33,35 @@ object graph
         @throws(classOf[IllegalArgumentException])
         def removeEdge(source:T, destination:T):Graph[T]
 
+        @throws(classOf[IllegalArgumentException])
+        def getAdjacent(source:T):Iterable[T]
+
+        def pathLength(path:Seq[T]):Option[Long]
+
+        @throws(classOf[IllegalArgumentException])
+        def shortestPathBetween(source:T, destination:T):Option[Seq[Edge[T]]]
+
         override def toString:String
     }
 
+
+    /*
+     * A class that represents an edge with a source, destination and weight
+     */
+    class Edge[T](val source:T, val destination:T, val weight:Int)
+    {
+        override def toString:String = source + " -> " + destination + " (" + weight + ")"
+    }
+    
+
     /**
-    Serves as a factory function for producing new empty Graphs
-    */
+     * Serves as a factory function for producing new empty Graphs
+     */
     object Graph
     {
         /*
-        Creates and returns a new empty Graph - acts as a constructor
-        */
+         * Creates and returns a new empty Graph - acts as a constructor
+         */
         def apply[T](isDirected: Boolean): Graph[T] =
         {
             val vertices: IndexedSeq[T] = IndexedSeq[T]()
@@ -213,14 +235,8 @@ object graph
                     {
                         if (!isDirected)
                         {
-                            // only remove the edge from the source to the destination and
-                            // the edge from the destination to the source
-
                             val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
                             val newEdges2 = newEdges.filterNot(edge => edge._1 == destination && edge._2 == source)
-
-
-
                             new GraphImpl(isDirected, vertices, newEdges2)
                         }
                         else
@@ -238,6 +254,119 @@ object graph
                 {
                     throw new IllegalArgumentException("One or both vertices do not exist")
                 }
+            }
+
+
+            /**
+             * Get adjacent vertices of the source vertex given
+             */
+            def getAdjacent(source:T):Iterable[T] = {
+                if (vertices.contains(source)) edges.filter(edge => edge._1 == source).map(edge => edge._2)
+                else throw new IllegalArgumentException("Vertex does not exist")
+            }
+
+
+            /*
+             * Returns length of path given a list of vertices
+             * or None if no path exists
+             */
+            def pathLength(path: Seq[T]): Option[Long] = {
+
+                if (path.size == 0) return None
+                if (path.size == 1) return Some(0)
+                
+                var length = 0L
+                var i = 0
+
+                while (i < path.size - 1)
+                {
+                    // get source and destination vertices
+                    val source = path(i)
+                    val destination = path(i + 1)
+
+                    // check if edge exists then add weight to length
+                    // otherwise there is no path thus return None
+                    if (edgeExists(source, destination)) length += getEdgeWeight(source, destination).get
+                    else return None
+
+                    // keep going until we reach the end of the path
+                    i += 1
+                }
+
+                // return the length of the path
+                Some(length)
+            }
+
+
+            /**
+             * Returns the shortest path between the two given vertices
+             * or None if no path exists
+             */
+            def shortestPathBetween(source:T, destination:T): Option[Seq[Edge[T]]] = {
+
+                if (source == null || destination == null) throw new IllegalArgumentException("Null arguments not allowed")
+
+                // create a mutable map of vertices and their distances from the source
+                val distances = Map[T, Long]()
+
+                // create a mutable map of vertices and their previous vertices
+                val previous = Map[T, T]()
+
+                // create a mutable list of vertices that have been visited
+                val visited = Set[T]()
+
+                // push the source vertex into distance map with 0
+                distances += (source -> 0)
+
+                // push the source vertex into the previous map with placeholder
+                previous += (source -> destination)
+
+                // while visited size is less than the number of vertices
+                while (visited.size < vertices.length) {
+
+                    // extract the vertex with the smallest distance from the distances
+                    // map that has not been visited
+                    val closest = distances.filter(distance => !visited.contains(distance._1)).minBy(_._2)._1
+
+                    // add the closest vertex to the visited set
+                    visited += closest
+
+                    // for other in graph.adjacent(current) and other not in visited do
+                    for (other <- getAdjacent(closest) if !visited.contains(other)) {
+                        
+                        // newDist = graph.edgeW eight(current, other) + dist(current)
+                        var newDist = getEdgeWeight(closest, other).get + distances(closest)
+
+                        if (newDist < distances.getOrElse(other, Long.MaxValue) || !distances.contains(other)) {
+
+                            // dist.push(other, newDist)
+                            distances += (other -> newDist)
+
+                            // parent.push(other, current)
+                            previous += (other -> closest)
+                        }
+                    }
+                }
+
+                // return the shortest path between the source and destination
+                var path = IndexedSeq[T]()
+                var current = destination
+
+                // while current is not the source
+                while (current != source) {
+
+                    // add current to the beginning of the path
+                    path = current +: path
+
+                    // current = previous(current)
+                    current = previous(current)
+                }
+
+                // add the source to the beginning of the path
+                path = source +: path
+
+                // return edge list of the path
+                Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toIndexedSeq)
             }
 
 
@@ -270,34 +399,37 @@ object graph
         var undirectedGraph = Graph[String](false)
 
         //add some vertices of type String
-        undirectedGraph = undirectedGraph.addVertex("A").addVertex("B").addVertex("C").addVertex("D")
+        undirectedGraph = undirectedGraph.addVertex("A")
+                                         .addVertex("B")
+                                         .addVertex("C")
+                                         .addVertex("D")
+                                         .addVertex("E")
+                                         .addVertex("F")
+                                         .addVertex("G")
         // println(undirectedGraph.getVertices.toString)
 
         //add some edges of type String
         undirectedGraph = undirectedGraph.addEdge("A", "B", 1).addEdge("A", "C", 2).addEdge("B", "C", 3).addEdge("C", "D", 4)
 
-        //print the graph
-        println(undirectedGraph + " first test pass?")
+        // add more
+        undirectedGraph = undirectedGraph.addEdge("B", "D", 5)
+                                         .addEdge("D", "E", 21)
+                                         .addEdge("E", "F", 5)
+                                         .addEdge("F", "G", 10)
+                                         .addEdge("G", "A", 110)
 
-        //remove an edge
-        undirectedGraph = undirectedGraph.removeEdge("A", "C")
 
-        //print the graph
-        println(undirectedGraph + " remove edge test pass?")
+        // shortest path between A and D
+        val path = undirectedGraph.shortestPathBetween("A", "G").get
+        println(path)
 
-        //remove a vertex
-        undirectedGraph = undirectedGraph.removeVertex("A")
+        //get path length
+        var path2: Seq[String] = Seq("A", "B", "D", "E", "F", "G")
+        val length = undirectedGraph.pathLength(path2).get
+        println(length)
 
-        //print the graph
-        println(undirectedGraph + " remove vertex test pass?")
-
-        var directedGraph = Graph[String](true)
-
-        directedGraph = directedGraph.addVertex("A").addVertex("B").addVertex("C").addVertex("D")
-        directedGraph = directedGraph.addEdge("A", "B", 1).addEdge("A", "C", 2).addEdge("B", "C", 3).addEdge("C", "D", 4)
-        directedGraph = directedGraph.removeEdge("A", "C")
-
-        println(directedGraph + " remove edge test pass?")
-        
+        // get adjacent vertices
+        val adjacent = undirectedGraph.getAdjacent("A")
+        println(adjacent)
     }
 }
