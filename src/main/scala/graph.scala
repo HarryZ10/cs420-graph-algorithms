@@ -317,8 +317,7 @@ object graph
              */
             def pathLength(path: Seq[T]): Option[Long] = {
 
-                if (path.size == 0) return None
-                if (path.size == 1) return Some(0)
+                if (path.size < 2) return None
                 
                 var length = 0L
                 var i = 0
@@ -350,8 +349,7 @@ object graph
              */
             def shortestPathBetween(source:T, destination:T): Option[Seq[Edge[T]]] = {
                 // if (source == destination) return Some(Seq[Edge[T]](new Edge[T](source, destination, 0)))
-                if ((source == null || destination == null) || source == destination)
-                    throw new IllegalArgumentException("Path does not exist")
+                if ((source == null || destination == null) || source == destination) return None
 
                 // create a mutable map of vertices and their distances from the source
                 val distances = Map[T, Long]()
@@ -396,7 +394,7 @@ object graph
                         }
                     }
                     catch {
-                        case e: UnsupportedOperationException => throw new IllegalArgumentException("Graph is not connected.")
+                        case e: UnsupportedOperationException => return None
                     }
                 }
 
@@ -455,36 +453,34 @@ object graph
                                          .addVertex("2")
                                          .addVertex("3")
                                          .addVertex("4")
-                                         .addVertex("5")
-                                         .addVertex("6")
                                          .addVertex("7")
 
         //add some edges of type String
         undirectedGraph = undirectedGraph.addEdge("1", "2", 1200)
                                           .addEdge("1", "3", 100)
-                                          .addEdge("1", "7", 120)
                                           .addEdge("2", "4", 12)
-                                          .addEdge("2", "3", 8)
-                                          .addEdge("7", "3", 9)
-                                          .addEdge("5", "7", 7)
-                                          .addEdge("7", "6", 90)
                                           .addEdge("4", "3", 11)
-                                          .addEdge("5", "4", 11)
-                                          .addEdge("6", "5", 6)
-                                          .addEdge("3", "5", 500)
+                                          .addEdge("4", "7", 10)
+
                                              
 
         // undirectedGraph = undirectedGraph.removeEdge("D", "C")
-
+        println("Starting")
 
         // shortest path between A and D
-        val path = undirectedGraph.shortestPathBetween("1", "1")
+        val path = undirectedGraph.shortestPathBetween("1", "7")
         println(path)
 
         //get path length
-        var path2: Seq[String] = Seq("1", "2", "4", "3","7")
+        var path2: Seq[String] = Seq("7", "3", "4", "2","1")
+        var path3: Seq[String] = Seq("1", "2", "4", "3","7")
         val length = undirectedGraph.pathLength(path2)
-        println(length)
+        val length2 = undirectedGraph.pathLength(path3)
+        println(length == length2, length, length2)
+
+        var notPath: Seq[String] = Seq("1")
+        val notLength = undirectedGraph.pathLength(notPath)
+        println(notLength)
 
         // get adjacent vertices
         val adjacent = undirectedGraph.getAdjacent("3")
@@ -494,5 +490,22 @@ object graph
         
         // // print the whole graph
         // println(undirectedGraph_fromCSVFile.toString)
+
+        println("Directed Graph\n")
+
+        //create an empty graph
+        var directedGraph = Graph[String](true)
+
+        //add some vertices of type String
+        directedGraph = directedGraph.addVertex("1")
+                                     .addVertex("2")
+                                     .addVertex("3")
+
+        //add some edges of type String
+        directedGraph = directedGraph.addEdge("3", "1", 1)
+                                     .addEdge("2", "3", 3)
+
+        // print the whole graph
+        println(directedGraph.shortestPathBetween("3", "2"))
     }
 }
