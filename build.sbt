@@ -23,14 +23,8 @@ version := "1.0"
 
 // Want to use a published library in your project?
 // You can define other libraries as dependencies in your build like this:
-<<<<<<< HEAD
+
 //libraryDependencies += "org.typelevel" %% "cats-core" % "2.0.0"
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.10"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
-
-=======
-libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.10"
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
-
->>>>>>> 869342e3bb6aba3dd2ddf08469588b9dbbf70d1e
