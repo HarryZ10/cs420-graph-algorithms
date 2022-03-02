@@ -379,7 +379,6 @@ object graph
                 while (visited.size < vertices.length && !notAPath) {
 
                     closest = distances.filter(distance => !visited.contains(distance._1))
-                    println("closest", closest, distances)
                     
                     // if there are no more vertices to visit, then there is no path
                     if (closest.isEmpty) {
