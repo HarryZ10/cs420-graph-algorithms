@@ -356,6 +356,8 @@ object graph
                 // create a mutable map of vertices and their distances from the source
                 val distances = Map[T, Long]()
 
+                var closest: Map[T, Long] = Map[T, Long]()
+
                 // create a mutable map of vertices and their previous vertices
                 val previous = Map[T, T]()
 
@@ -363,6 +365,8 @@ object graph
                 val visited = Set[T]()
                 
                 var closestVertex: T = 0.asInstanceOf[T]
+
+                var notAPath: Boolean = false
 
 
                 // push the source vertex into distance map with 0
@@ -372,13 +376,16 @@ object graph
                 previous += (source -> destination)
 
                 // while visited size is less than the number of vertices
-                while (visited.size < vertices.length) {
+                while (visited.size < vertices.length && !notAPath) {
 
-                    var closest = distances.filter(distance => !visited.contains(distance._1))
+                    closest = distances.filter(distance => !visited.contains(distance._1))
+                    println("closest", closest, distances)
                     
-                    // if there are no more vertices to visit, return None
+                    // if there are no more vertices to visit, then there is no path
                     if (closest.isEmpty) {
-                        return None
+                        
+                        notAPath = true
+
                     } else {
                         // get the closest vertex
                         closestVertex = closest.minBy(_._2)._1
@@ -414,8 +421,13 @@ object graph
                     // add current to the beginning of the path
                     path = current +: path
 
-                    // current = previous(current)
-                    current = previous(current)
+                    // get the previous vertex of current
+                    try {
+                        current = previous(current)
+                    }
+                    catch {
+                        case e: NoSuchElementException => return None
+                    }
                 }
 
                 // add the source to the beginning of the path
@@ -465,12 +477,13 @@ object graph
         undirectedGraph = undirectedGraph.addEdge("A", "B", 1)
         undirectedGraph = undirectedGraph.addEdge("B", "C", 1)
         undirectedGraph = undirectedGraph.addEdge("C", "D", 1)
+        // undirectedGraph = undirectedGraph.addEdge("D", "E", 1)
 
         //print the graph
         println(undirectedGraph.pathLength(Seq("A", "B", "C", "D")))
 
         // shortest path from A to E
-        println(undirectedGraph.shortestPathBetween("A", "B"))
+        println(undirectedGraph.shortestPathBetween("A", "D"))
 
     }
 }
