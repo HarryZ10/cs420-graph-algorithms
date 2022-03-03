@@ -420,12 +420,12 @@ object graph
                     // add current to the beginning of the path
                     path = current +: path
 
-                    // get the previous vertex of current
-                    try {
+                    // if current is not in the previous map, then there is no path
+                    if (!previous.contains(current)) {
+                        return None
+                    } else {
+                        // set current to the previous vertex of current
                         current = previous(current)
-                    }
-                    catch {
-                        case e: NoSuchElementException => return None
                     }
                 }
 
@@ -433,7 +433,7 @@ object graph
                 path = source +: path
 
                 // return edge list of the path
-                Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toIndexedSeq)
+                Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq)
             }
 
 
@@ -473,13 +473,14 @@ object graph
         undirectedGraph = undirectedGraph.addVertex("E")
 
         //add edges
-        undirectedGraph = undirectedGraph.addEdge("A", "B", 1)
-        undirectedGraph = undirectedGraph.addEdge("B", "C", 1)
-        undirectedGraph = undirectedGraph.addEdge("C", "D", 1)
+        undirectedGraph = undirectedGraph.addEdge("A", "B", 10)
+        undirectedGraph = undirectedGraph.addEdge("A", "C", 20)
+        undirectedGraph = undirectedGraph.addEdge("B", "C", 10000)
+        undirectedGraph = undirectedGraph.addEdge("C", "D", 100)
         // undirectedGraph = undirectedGraph.addEdge("D", "E", 1)
 
         //print the graph
-        println(undirectedGraph.pathLength(Seq("A", "B", "C", "D")))
+        println(undirectedGraph.pathLength(Seq("A", "C", "D")))
 
         // shortest path from A to E
         println(undirectedGraph.shortestPathBetween("A", "D"))
