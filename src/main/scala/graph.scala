@@ -349,91 +349,93 @@ object graph
              */
             def shortestPathBetween(source:T, destination:T): Option[Seq[Edge[T]]] = {
                 // if (source == destination) return Some(Seq[Edge[T]](new Edge[T](source, destination, 0)))
-                if ((source == null || destination == null) || source == destination) {
-                    return None
-                }
+                if ((source != null || destination != null) || source != destination) {
+                    // create a mutable map of vertices and their distances from the source
+                    val distances = Map[T, Long]()
 
-                // create a mutable map of vertices and their distances from the source
-                val distances = Map[T, Long]()
+                    var closest: Map[T, Long] = Map[T, Long]()
 
-                var closest: Map[T, Long] = Map[T, Long]()
+                    // create a mutable map of vertices and their previous vertices
+                    val previous = Map[T, T]()
 
-                // create a mutable map of vertices and their previous vertices
-                val previous = Map[T, T]()
-
-                // create a mutable list of vertices that have been visited
-                val visited = Set[T]()
-                
-                var closestVertex: T = 0.asInstanceOf[T]
-
-                var notAPath: Boolean = false
-
-
-                // push the source vertex into distance map with 0
-                distances += (source -> 0L)
-
-                // push the source vertex into the previous map with placeholder
-                previous += (source -> destination)
-
-                // while visited size is less than the number of vertices
-                while (visited.size < vertices.length && !notAPath) {
-
-                    closest = distances.filter(distance => !visited.contains(distance._1))
+                    // create a mutable list of vertices that have been visited
+                    val visited = Set[T]()
                     
-                    // if there are no more vertices to visit, then there is no path
-                    if (closest.isEmpty) {
+                    var closestVertex: T = 0.asInstanceOf[T]
+
+                    var notAPath: Boolean = false
+
+
+                    // push the source vertex into distance map with 0
+                    distances += (source -> 0L)
+
+                    // push the source vertex into the previous map with placeholder
+                    previous += (source -> destination)
+
+                    // while visited size is less than the number of vertices
+                    while (visited.size < vertices.length && !notAPath) {
+
+                        closest = distances.filter(distance => !visited.contains(distance._1))
                         
-                        notAPath = true
+                        // if there are no more vertices to visit, then there is no path
+                        if (closest.isEmpty) {
+                            
+                            notAPath = true
 
-                    } else {
-                        // get the closest vertex
-                        closestVertex = closest.minBy(_._2)._1
+                        } else {
+                            // get the closest vertex
+                            closestVertex = closest.minBy(_._2)._1
 
-                        // add the closest vertex to the visited set
-                        visited += closestVertex
+                            // add the closest vertex to the visited set
+                            visited += closestVertex
 
-                        // for other in graph.adjacent(current) and other not in visited do
-                        for (other <- getAdjacent(closestVertex) if !visited.contains(other)) {
+                            // for other in graph.adjacent(current) and other not in visited do
+                            for (other <- getAdjacent(closestVertex) if !visited.contains(other)) {
 
-                            // newDist = graph.edgeW eight(current, other) + dist(current)
-                            var newDist = getEdgeWeight(closestVertex, other).get + distances(closestVertex)
+                                // newDist = graph.edgeW eight(current, other) + dist(current)
+                                var newDist = getEdgeWeight(closestVertex, other).get + distances(closestVertex)
 
-                            if (newDist < distances.getOrElse(other, Long.MaxValue) || !distances.contains(other)) {
+                                if (newDist < distances.getOrElse(other, Long.MaxValue) || !distances.contains(other)) {
 
-                                // dist.push(other, newDist)
-                                distances += (other -> newDist)
+                                    // dist.push(other, newDist)
+                                    distances += (other -> newDist)
 
-                                // parent.push(other, current)
-                                previous += (other -> closestVertex)
+                                    // parent.push(other, current)
+                                    previous += (other -> closestVertex)
+                                }
                             }
                         }
                     }
-                }
 
-                // return the shortest path between the source and destination
-                var path = IndexedSeq[T]()
-                var current = destination
+                    // return the shortest path between the source and destination
+                    var path = IndexedSeq[T]()
+                    var current = destination
 
-                // while current is not the source
-                while (current != source) {
+                    // while current is not the source
+                    while (current != source) {
 
-                    // add current to the beginning of the path
-                    path = current +: path
+                        // add current to the beginning of the path
+                        path = current +: path
 
-                    // if current is not in the previous map, then there is no path
-                    if (!previous.contains(current)) {
-                        return None
-                    } else {
-                        // set current to the previous vertex of current
-                        current = previous(current)
+                        // if current is not in the previous map, then there is no path
+                        if (!previous.contains(current)) {
+                            return None
+                        } else {
+                            // set current to the previous vertex of current
+                            current = previous(current)
+                        }
                     }
+
+                    // add the source to the beginning of the path
+                    path = source +: path
+
+                    // return edge list of the path
+                    Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq)
+
+                } else {
+                    None
                 }
 
-                // add the source to the beginning of the path
-                path = source +: path
-
-                // return edge list of the path
-                Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq)
             }
 
 
