@@ -39,4 +39,10 @@ class DirectedGraphTest extends FlatSpec
 		assert(graph.shortestPathBetween("foo", "bar").isEmpty)
 	}
 
+	it should "not have a MST" in
+	{
+		val graph = Graph[String](true)
+
+		assert(graph.minimumSpanningTree.isEmpty)
+	}
 }
