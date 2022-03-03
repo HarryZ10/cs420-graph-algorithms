@@ -334,28 +334,37 @@ object graph
 
             def minimumSpanningTree:Option[Graph[T]] = {
 
-                // implement kruskal's algorithm
+                // if directed, return None
+                if (!isDirected) {
+                
+                    // set of edges, initially empty
+                    var out:Set[Edge[T]] = Set()
 
-                // set of edges, initially empty
-                var out:Set[Edge[T]] = Set()
+                    // a map from vertex to a set of vertices, initially empty
+                    var tree:Map[T, Set[T]] = Map()
 
-                // a map from vertex to a set of vertices, initially empty
-                var tree:Map[T, Set[T]] = Map()
+                    // a sorted (ascending) list of edges
+                    var sortedEdges:Seq[(T, T, Int)] = edges.toList.sortWith((e1, e2) => e1._3 < e2._3)
 
-                // a sorted (ascending) list of edges
-                var sortedEdges:Seq[(T, T, Int)] = edges.toList.sortWith((e1, e2) => e1._3 < e2._3)
+                    println("Sorted edges: " + sortedEdges)
 
-                println("Sorted edges: " + sortedEdges)
-
-                // for each edge in the sorted list
-                for (edge <- sortedEdges if tree.size != vertices.size)
-                {
-
-                    // if the source is not in the tree
-                    if (!tree.contains(edge._1))
+                    // for each edge in the sorted list
+                    for (edge <- sortedEdges if tree.size != vertices.size)
                     {
-                        // add the source to the tree
-                        tree = tree + (edge._1 -> Set(edge._1))
+
+                        // if the source is not in the tree
+                        if (!tree.contains(edge._1))
+                        {
+                            // add the source to the tree
+                            tree = tree + (edge._1 -> Set(edge._1))
+
+                            // if the destination is not in the tree
+                            if (!tree.contains(edge._2))
+                            {
+                                // add the destination to the tree
+                                tree = tree + (edge._2 -> Set(edge._2))
+                            }
+                        }
 
                         // if the destination is not in the tree
                         if (!tree.contains(edge._2))
@@ -363,40 +372,33 @@ object graph
                             // add the destination to the tree
                             tree = tree + (edge._2 -> Set(edge._2))
                         }
-                    }
 
-                    // if the destination is not in the tree
-                    if (!tree.contains(edge._2))
-                    {
-                        // add the destination to the tree
-                        tree = tree + (edge._2 -> Set(edge._2))
-                    }
-
-                    // if the source and destination are in the tree
-                    if (tree.contains(edge._1) && tree.contains(edge._2))
-                    {
-                        // if the source and destination are not the same
-                        if (edge._1 != edge._2)
+                        // if the source and destination are in the tree
+                        if (tree.contains(edge._1) && tree.contains(edge._2))
                         {
-                            // if the source and destination are not already connected
-                            if (!tree(edge._1).contains(edge._2))
+                            // if the source and destination are not the same
+                            if (edge._1 != edge._2)
                             {
-                                // add the edge to the set of edges
-                                out = out + (new Edge(edge._1, edge._2, edge._3))
+                                // if the source and destination are not already connected
+                                if (!tree(edge._1).contains(edge._2))
+                                {
+                                    // add the edge to the set of edges
+                                    out = out + (new Edge(edge._1, edge._2, edge._3))
 
-                                // add the destination to the source's set of vertices
-                                tree = tree + (edge._1 -> (tree(edge._1) + edge._2))
+                                    // add the destination to the source's set of vertices
+                                    tree = tree + (edge._1 -> (tree(edge._1) + edge._2))
 
-                                // add the source to the destination's set of vertices
-                                tree = tree + (edge._2 -> (tree(edge._2) + edge._1))
+                                    // add the source to the destination's set of vertices
+                                    tree = tree + (edge._2 -> (tree(edge._2) + edge._1))
+                                }
                             }
                         }
                     }
-                }
 
-                // return the set of edges
-                Some(new GraphImpl(isDirected, vertices, out.map(edge => (edge.source, edge.destination, edge.weight)).toSeq))
-                
+                    Some(new GraphImpl(isDirected, vertices, out.map(edge => (edge.source, edge.destination, edge.weight)).toSeq))
+                } else {
+                    None
+                }
             }
 
             /**
@@ -572,9 +574,7 @@ object graph
         //add edges
         undirectedGraph = undirectedGraph.addEdge("A", "B", 1)
         undirectedGraph = undirectedGraph.addEdge("B", "C", 10)
-        undirectedGraph = undirectedGraph.addEdge("C", "D", 100)
-        undirectedGraph = undirectedGraph.addEdge("B", "E", 5)
-        undirectedGraph = undirectedGraph.addEdge("E", "D", 50)
+        undirectedGraph = undirectedGraph.addEdge("C", "A", 100)
 
         // print minimum spanning tree
         println("Minimum Spanning Tree:")
