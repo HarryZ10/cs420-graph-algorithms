@@ -153,9 +153,10 @@ object graph
             def getEdges:Iterable[Edge[T]] =
             {
                 // create new seq from edges using map
-                val edgeSeq: Iterable[Edge[T]] =
+                var edgeSeq: Iterable[Edge[T]] =
                     edges.map(edge => new Edge(edge._1, edge._2, edge._3))
-
+                
+                
                 edgeSeq
             }
 
@@ -188,14 +189,14 @@ object graph
              */
             def getEdgeWeight(source:T, destination:T):Option[Int] = {
                 
-                if (edgeExists(source, destination))
-                {
-                    Some(edges.filter(edge => edge._1 == source && edge._2 == destination).head._3)
-                }
+                // count each edge once even if it's undirected
+                val edge = edges.find(e => e._1 == source && e._2 == destination)
+
+                // if edge exists, return it
+                if (edge != None)
+                    Some(edge.get._3)
                 else
-                {
                     None
-                }
             }
 
 
@@ -334,29 +335,42 @@ object graph
 
             def minimumSpanningTree:Option[Graph[T]] = {
 
-                // if directed, return None
-                if (!isDirected) {
-                
-                    // set of edges, initially empty
-                    var out:Set[Edge[T]] = Set()
+                // if graph is empty, return None
+                if (vertices.isEmpty)
+                {
+                    None
+                }
+                else
+                {
+                    // if directed, return None
+                    if (!isDirected) {
+                    
+                        // set of edges, initially empty
+                        var out:Set[Edge[T]] = Set()
 
-                    // a map from vertex to a set of vertices, initially empty
-                    var tree:Map[T, Set[T]] = Map()
+                        // a map from vertex to a set of vertices, initially empty
+                        var tree:Map[T, Set[T]] = Map()
 
-                    // a sorted (ascending) list of edges
-                    var sortedEdges:Seq[(T, T, Int)] = edges.toList.sortWith((e1, e2) => e1._3 < e2._3)
+                        // a sorted (ascending) list of edges
+                        var sortedEdges:Seq[(T, T, Int)] = edges.toList.sortWith((e1, e2) => e1._3 < e2._3)
 
-                    println("Sorted edges: " + sortedEdges)
-
-                    // for each edge in the sorted list
-                    for (edge <- sortedEdges if tree.size != vertices.size)
-                    {
-
-                        // if the source is not in the tree
-                        if (!tree.contains(edge._1))
+                        // for each edge in the sorted list
+                        for (edge <- sortedEdges if tree.size != vertices.size)
                         {
-                            // add the source to the tree
-                            tree = tree + (edge._1 -> Set(edge._1))
+                            
+                            // if the source is not in the tree
+                            if (!tree.contains(edge._1))
+                            {
+                                // add the source to the tree
+                                tree = tree + (edge._1 -> Set(edge._1))
+
+                                // if the destination is not in the tree
+                                if (!tree.contains(edge._2))
+                                {
+                                    // add the destination to the tree
+                                    tree = tree + (edge._2 -> Set(edge._2))
+                                }
+                            }
 
                             // if the destination is not in the tree
                             if (!tree.contains(edge._2))
@@ -364,40 +378,37 @@ object graph
                                 // add the destination to the tree
                                 tree = tree + (edge._2 -> Set(edge._2))
                             }
-                        }
 
-                        // if the destination is not in the tree
-                        if (!tree.contains(edge._2))
-                        {
-                            // add the destination to the tree
-                            tree = tree + (edge._2 -> Set(edge._2))
-                        }
-
-                        // if the source and destination are in the tree
-                        if (tree.contains(edge._1) && tree.contains(edge._2))
-                        {
-                            // if the source and destination are not the same
-                            if (edge._1 != edge._2)
+                            // if the source and destination are in the tree
+                            if (tree.contains(edge._1) && tree.contains(edge._2))
                             {
-                                // if the source and destination are not already connected
-                                if (!tree(edge._1).contains(edge._2))
+                                // if the source and destination are not the same
+                                if (edge._1 != edge._2)
                                 {
-                                    // add the edge to the set of edges
-                                    out = out + (new Edge(edge._1, edge._2, edge._3))
+                                    // if the source and destination are not already connected
+                                    if (!tree(edge._1).contains(edge._2))
+                                    {
+                                        // add the edge to the set of edges
+                                        out = out + (new Edge(edge._1, edge._2, edge._3))
 
-                                    // add the destination to the source's set of vertices
-                                    tree = tree + (edge._1 -> (tree(edge._1) + edge._2))
+                                        // add the destination to the source's set of vertices
+                                        tree = tree + (edge._1 -> (tree(edge._1) + edge._2))
 
-                                    // add the source to the destination's set of vertices
-                                    tree = tree + (edge._2 -> (tree(edge._2) + edge._1))
+                                        // add the source to the destination's set of vertices
+                                        tree = tree + (edge._2 -> (tree(edge._2) + edge._1))
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Some(new GraphImpl(isDirected, vertices, out.map(edge => (edge.source, edge.destination, edge.weight)).toSeq))
-                } else {
-                    None
+                        // if out is not the same size as the number of edges
+                        if (tree.size != vertices.size || out.size != edges.size) None
+                        else Some(new GraphImpl(isDirected, vertices, out.map(edge => (edge.source, edge.destination, edge.weight)).toSeq))
+
+
+                    } else {
+                        None
+                    }
                 }
             }
 
@@ -563,22 +574,23 @@ object graph
     {
         //create an empty graph
         var undirectedGraph = Graph[String](false)
+        var undirectedGraph2 = Graph[String](false)
 
         //add vertices
         undirectedGraph = undirectedGraph.addVertex("A")
         undirectedGraph = undirectedGraph.addVertex("B")
         undirectedGraph = undirectedGraph.addVertex("C")
         undirectedGraph = undirectedGraph.addVertex("D")
-        undirectedGraph = undirectedGraph.addVertex("E")
+        // undirectedGraph = undirectedGraph.addVertex("E")
 
         //add edges
         undirectedGraph = undirectedGraph.addEdge("A", "B", 1)
-        undirectedGraph = undirectedGraph.addEdge("B", "C", 10)
-        undirectedGraph = undirectedGraph.addEdge("C", "A", 100)
+        undirectedGraph = undirectedGraph.addEdge("C", "D", 1)
 
         // print minimum spanning tree
         println("Minimum Spanning Tree:")
         println(undirectedGraph.minimumSpanningTree)
-        
+        println(undirectedGraph)
+
     }
 }
