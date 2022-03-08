@@ -46,4 +46,11 @@ class UndirectedGraphTest extends FlatSpec
 
 		assert(graph.minimumSpanningTree.isEmpty)
 	}
+
+	it should "have an empty tour" in
+	{
+		val graph = Graph[String](false)
+		
+		assert(graph.greedyTSP.isEmpty)
+	}
 }
