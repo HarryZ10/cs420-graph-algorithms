@@ -2,6 +2,8 @@ import java.io.IOException
 import java.io.File
 import java.util.Scanner
 
+import scala.util.Random
+import scala.collection.mutable.Stack
 import scala.collection.mutable.Map
 import scala.collection.mutable.Set
 
@@ -16,11 +18,15 @@ object graph
 
         def getVertices:Iterable[T]
 
-        def getEdges:Iterable[(T,T,Int)]
+        def getEdges:Iterable[Edge[T]]
 
         def edgeExists(source:T, destination:T):Boolean
 
         def getEdgeWeight(source:T, destination:T):Option[Int]
+
+        def getEdge(source:T, destination:T):Option[Edge[T]]
+
+        def minimumSpanningTree:Option[Graph[T]]
 
         @throws(classOf[IllegalArgumentException])
         def addVertex(vertex:T):Graph[T]
@@ -42,6 +48,10 @@ object graph
         @throws(classOf[IllegalArgumentException])
         def shortestPathBetween(source:T, destination:T):Option[Seq[Edge[T]]]
 
+        def greedyTSP():Seq[Edge[T]]
+        
+        def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]]
+
         override def toString:String
     }
 
@@ -49,9 +59,16 @@ object graph
     /*
      * A class that represents an edge with a source, destination and weight
      */
-    class Edge[T](val source:T, val destination:T, val weight:Int)
+    class Edge[T](val source:T, val destination:T, val weight:Int) extends Ordered[Edge[T]]
     {
         override def toString:String = source + " -> " + destination + " (" + weight + ")"
+
+        def compare(other:Edge[T]):Int =
+        {
+            if (this.weight < other.weight) -1
+            else if (this.weight > other.weight) 1
+            else 0
+        }
     }
     
 
@@ -139,7 +156,27 @@ object graph
              * Gets edges from the graph
              * @return the list of edges in the graph
              */
-            def getEdges:Iterable[(T, T, Int)] = edges
+            def getEdges:Iterable[Edge[T]] =
+            {
+                // create new seq from edges using map
+                val edgeSeq: Iterable[Edge[T]] =
+                    edges.map(edge => new Edge(edge._1, edge._2, edge._3))
+
+                edgeSeq
+            }
+
+
+            def getEdge(source:T, destination:T):Option[Edge[T]] = {
+
+                // get the edge from the edges list
+                val edge = edges.find(e => e._1 == source && e._2 == destination)
+
+                // if edge exists, return it
+                if (edge != None)
+                    Some(new Edge(edge.get._1, edge.get._2, edge.get._3))
+                else
+                    None
+            }
 
 
             /**
@@ -301,6 +338,72 @@ object graph
                 }
             }
 
+            def minimumSpanningTree:Option[Graph[T]] = {
+
+                // if directed, return None
+                if (!isDirected) {
+                
+                    // set of edges, initially empty
+                    var out:Set[Edge[T]] = Set()
+
+                    // a map from vertex to a set of vertices, initially empty
+                    var tree:Map[T, Set[T]] = Map()
+
+                    // a sorted (ascending) list of edges
+                    var sortedEdges:Seq[(T, T, Int)] = edges.toList.sortWith((e1, e2) => e1._3 < e2._3)
+
+                    // for each edge in the sorted list
+                    for (edge <- sortedEdges if tree.size != vertices.size)
+                    {
+
+                        // if the source is not in the tree
+                        if (!tree.contains(edge._1))
+                        {
+                            // add the source to the tree
+                            tree = tree + (edge._1 -> Set(edge._1))
+
+                            // if the destination is not in the tree
+                            if (!tree.contains(edge._2))
+                            {
+                                // add the destination to the tree
+                                tree = tree + (edge._2 -> Set(edge._2))
+                            }
+                        }
+
+                        // if the destination is not in the tree
+                        if (!tree.contains(edge._2))
+                        {
+                            // add the destination to the tree
+                            tree = tree + (edge._2 -> Set(edge._2))
+                        }
+
+                        // if the source and destination are in the tree
+                        if (tree.contains(edge._1) && tree.contains(edge._2))
+                        {
+                            // if the source and destination are not the same
+                            if (edge._1 != edge._2)
+                            {
+                                // if the source and destination are not already connected
+                                if (!tree(edge._1).contains(edge._2))
+                                {
+                                    // add the edge to the set of edges
+                                    out = out + (new Edge(edge._1, edge._2, edge._3))
+
+                                    // add the destination to the source's set of vertices
+                                    tree = tree + (edge._1 -> (tree(edge._1) + edge._2))
+
+                                    // add the source to the destination's set of vertices
+                                    tree = tree + (edge._2 -> (tree(edge._2) + edge._1))
+                                }
+                            }
+                        }
+                    }
+
+                    Some(new GraphImpl(isDirected, vertices, out.map(edge => (edge.source, edge.destination, edge.weight)).toSeq))
+                } else {
+                    None
+                }
+            }
 
             /**
              * Get adjacent vertices of the source vertex given
@@ -439,6 +542,126 @@ object graph
             }
 
 
+            def greedyTSP():Seq[Edge[T]] = {
+
+                var tour: Seq[T] = Seq[T]()
+                tour = useDFS(vertices.toSeq)
+
+                println("Tour: " + tour)
+                
+                var tourDist = this.pathLength(tour)
+
+                // while tour dist is less than all the edge's weight
+                while (tourDist.getOrElse(Long.MaxValue) < this.totalWeight) {
+                    
+                    // for i = 0... length(tour) - 1
+                    for (a <- 0 until tour.size - 1) {
+                        for (b <- a + 1 until tour.size) {
+
+                            // newTour gets 2Opt Swap of tour, i, j
+                            var newTour = twoOptSwap(tour, a, b)
+                            var dist = this.pathLength(newTour)
+
+                            // if dist < bestDist
+                            if (dist.get < tourDist.get) {
+                                tour = newTour
+                                tourDist = dist
+                            }
+                        }
+                    }
+                }
+
+                // return tour
+                this.minimumSpanningTree.get.getEdges.filter(edge => tour.contains(edge.source) && tour.contains(edge.destination)).toSeq
+            }
+
+            def useDFS(list: Seq[T]): Seq[T] = {
+
+                // create a mutable list of vertices that have been visited
+                var visited = Set[T]()
+                
+                // use a stack to keep track of vertices to visit
+                var stack = Stack[T]()
+
+                // get first vertex in list as a starting point
+                var current = list(0)
+
+                // push the first vertex into the stack
+                stack.push(current)
+                
+                // mark the first vertex as visited
+                visited += current
+
+                // until the stack is empty
+                while (!stack.isEmpty) {
+
+                    // pop the top vertex from the stack to point to current
+                    current = stack.pop()
+
+                    // for each vertex in graph.adjacent(current)
+                    for (other <- getAdjacent(current) if !visited.contains(other)) {
+
+                        // if other is not in visited
+                        // push other into stack
+                        stack.push(other)
+
+                        // mark other as visited
+                        visited += other
+                    }
+                }
+
+                // return the list of vertices that have been visited
+                visited.toSeq
+            }
+
+            def twoOptSwap(tour: Seq[T], a: Int, b: Int): Seq[T] = {
+
+                // prefix = tour[0 : i]
+                var prefix = tour.slice(0, a)
+                // mid = tour[i : k]
+                var mid = tour.slice(a, b)
+                // end = tour[k : length(tour)]
+                var end = tour.slice(b, tour.size)
+
+                // return prefix + reverse(mid) + end
+                prefix ++ mid.reverse ++ end
+            }
+        
+            // get total weight
+            def totalWeight(): Long = {
+                edges.map(edge => edge._3).sum
+            }
+
+            def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]] = {
+ // get a random valid path
+                var tour: Seq[T] = initialTour
+                var tourDist = this.pathLength(tour)
+
+                // while tour dist is less than all the edge's weight
+                while (tourDist.getOrElse(Long.MaxValue) < this.totalWeight) {
+                    
+                    // for i = 0... length(tour) - 1
+                    for (i <- 0 until tour.size - 1) {
+                        for (j <- i + 1 until tour.size) {
+
+                            // newTour gets 2Opt Swap of tour, i, j
+                            var newTour = twoOptSwap(tour, i, j)
+                            var dist = this.pathLength(newTour)
+
+                            // if dist < bestDist
+                            if (dist.getOrElse(Long.MaxValue) < tourDist.getOrElse(Long.MaxValue)) {
+                                tour = newTour
+                                tourDist = dist
+                            }
+                        }
+                    }
+                }
+
+                // return tour
+                this.minimumSpanningTree.get.getEdges.filter(edge => tour.contains(edge.source) && tour.contains(edge.destination)).toSeq
+            }
+
+
             /**
              * Returns a string representation of the graph
              *
@@ -464,28 +687,11 @@ object graph
 
     def main(args:Array[String])
     {
-        //create an empty graph
-        var undirectedGraph = Graph[String](false)
+        //create an empty graph from example.csv
+        val graph = Graph.fromCSVFile(false, "src/main/Example.csv");
 
-        //add vertices
-        undirectedGraph = undirectedGraph.addVertex("A")
-        undirectedGraph = undirectedGraph.addVertex("B")
-        undirectedGraph = undirectedGraph.addVertex("C")
-        undirectedGraph = undirectedGraph.addVertex("D")
-        undirectedGraph = undirectedGraph.addVertex("E")
-
-        //add edges
-        undirectedGraph = undirectedGraph.addEdge("A", "B", 10)
-        undirectedGraph = undirectedGraph.addEdge("A", "C", 20)
-        undirectedGraph = undirectedGraph.addEdge("B", "C", 10000)
-        undirectedGraph = undirectedGraph.addEdge("C", "D", 100)
-        // undirectedGraph = undirectedGraph.addEdge("D", "E", 1)
-
-        //print the graph
-        println(undirectedGraph.pathLength(Seq("A", "C", "D")))
-
-        // shortest path from A to E
-        println(undirectedGraph.shortestPathBetween("A", "D"))
-
+        println(graph.greedyTSP())
+        // println(undirectedGraph.greedyTSP(Seq("B", "C", "A", "D", "E")))
+        
     }
 }
