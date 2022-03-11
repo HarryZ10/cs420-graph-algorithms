@@ -357,7 +357,6 @@ object graph
                         // for each edge in the sorted list
                         for (edge <- sortedEdges if tree.size != vertices.size)
                         {
-                            
                             // if the source is not in the tree
                             if (!tree.contains(edge._1))
                             {
