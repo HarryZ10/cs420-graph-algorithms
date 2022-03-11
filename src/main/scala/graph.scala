@@ -125,7 +125,10 @@ object graph
 
                 scanner.close()
 
-                new GraphImpl(isDirected, vertices, edges)
+                if (isDirected)
+                    new GraphImpl(isDirected, vertices, edges)
+                else
+                    new GraphImpl(isDirected, vertices, edges ++ edges.map(e => (e._2, e._1, e._3)))
             }
             catch {
                 case e:Exception => throw new IOException("Error reading file " + fileName)
@@ -158,11 +161,15 @@ object graph
              */
             def getEdges:Iterable[Edge[T]] =
             {
-                // create new seq from edges using map
-                val edgeSeq: Iterable[Edge[T]] =
+                if (isDirected)
+                {
                     edges.map(edge => new Edge(edge._1, edge._2, edge._3))
-
-                edgeSeq
+                }
+                else
+                {
+                    edges.map(edge => new Edge(edge._1, edge._2, edge._3)) ++
+                    edges.map(edge => new Edge(edge._2, edge._1, edge._3))
+                }
             }
 
 
@@ -545,25 +552,25 @@ object graph
             def greedyTSP():Seq[Edge[T]] = {
 
                 var tour: Seq[T] = Seq[T]()
-                tour = useDFS(vertices.toSeq)
+                tour = makeTour(vertices.toSeq)
 
                 println("Tour: " + tour)
                 
-                var tourDist = this.pathLength(tour)
+                var tourDist = pathLength(tour)
 
                 // while tour dist is less than all the edge's weight
-                while (tourDist.getOrElse(Long.MaxValue) < this.totalWeight) {
-                    
+                while (tourDist.getOrElse(Long.MaxValue) < totalEdgeWeight) {
+
                     // for i = 0... length(tour) - 1
                     for (a <- 0 until tour.size - 1) {
                         for (b <- a + 1 until tour.size) {
 
                             // newTour gets 2Opt Swap of tour, i, j
                             var newTour = twoOptSwap(tour, a, b)
-                            var dist = this.pathLength(newTour)
+                            var dist = pathLength(newTour)
 
                             // if dist < bestDist
-                            if (dist.get < tourDist.get) {
+                            if (dist.getOrElse(0L) < tourDist.getOrElse(0L)) {
                                 tour = newTour
                                 tourDist = dist
                             }
@@ -572,10 +579,10 @@ object graph
                 }
 
                 // return tour
-                this.minimumSpanningTree.get.getEdges.filter(edge => tour.contains(edge.source) && tour.contains(edge.destination)).toSeq
+                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(0))).toSeq
             }
 
-            def useDFS(list: Seq[T]): Seq[T] = {
+            def makeTour(list: Seq[T]): Seq[T] = {
 
                 // create a mutable list of vertices that have been visited
                 var visited = Set[T]()
@@ -616,11 +623,8 @@ object graph
 
             def twoOptSwap(tour: Seq[T], a: Int, b: Int): Seq[T] = {
 
-                // prefix = tour[0 : i]
                 var prefix = tour.slice(0, a)
-                // mid = tour[i : k]
                 var mid = tour.slice(a, b)
-                // end = tour[k : length(tour)]
                 var end = tour.slice(b, tour.size)
 
                 // return prefix + reverse(mid) + end
@@ -628,17 +632,23 @@ object graph
             }
         
             // get total weight
-            def totalWeight(): Long = {
-                edges.map(edge => edge._3).sum
+            def totalEdgeWeight(): Long = {
+                // if directed, return total weight
+                if (isDirected) {
+                    edges.map(edge => edge._3).sum
+                } else {
+                    // if undirected, return total weight / 2
+                    edges.map(edge => edge._3).sum / 2
+                }
             }
 
             def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]] = {
- // get a random valid path
+
                 var tour: Seq[T] = initialTour
                 var tourDist = this.pathLength(tour)
 
                 // while tour dist is less than all the edge's weight
-                while (tourDist.getOrElse(Long.MaxValue) < this.totalWeight) {
+                while (tourDist.getOrElse(Long.MaxValue) < totalEdgeWeight) {
                     
                     // for i = 0... length(tour) - 1
                     for (i <- 0 until tour.size - 1) {
@@ -649,7 +659,7 @@ object graph
                             var dist = this.pathLength(newTour)
 
                             // if dist < bestDist
-                            if (dist.getOrElse(Long.MaxValue) < tourDist.getOrElse(Long.MaxValue)) {
+                            if (dist.getOrElse(0L) < tourDist.getOrElse(0L)) {
                                 tour = newTour
                                 tourDist = dist
                             }
@@ -658,7 +668,7 @@ object graph
                 }
 
                 // return tour
-                this.minimumSpanningTree.get.getEdges.filter(edge => tour.contains(edge.source) && tour.contains(edge.destination)).toSeq
+                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(0))).toSeq
             }
 
 
@@ -689,9 +699,9 @@ object graph
     {
         //create an empty graph from example.csv
         val graph = Graph.fromCSVFile(false, "src/main/Example.csv");
-
-        println(graph.greedyTSP())
-        // println(undirectedGraph.greedyTSP(Seq("B", "C", "A", "D", "E")))
+        println(graph.getEdges)
+        println(graph.greedyTSP());
+        // println(graph.greedyTSP(Seq("v1", "v2", "v3", "v4", "v5", "v6")))
         
     }
 }
