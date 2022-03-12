@@ -155,8 +155,7 @@ object graph
                 // create new seq from edges using map
                 var edgeSeq: Iterable[Edge[T]] =
                     edges.map(edge => new Edge(edge._1, edge._2, edge._3))
-                
-                
+
                 edgeSeq
             }
 
@@ -165,7 +164,6 @@ object graph
 
                 // get the edge from the edges list
                 val edge = edges.find(e => e._1 == source && e._2 == destination)
-
                 // if edge exists, return it
                 if (edge != None)
                     Some(new Edge(edge.get._1, edge.get._2, edge.get._3))
@@ -280,14 +278,10 @@ object graph
                     }
                     else
                     {
-                        if (!isDirected)
-                        {
-                            val newEdges = edges :+ (source, destination, weight) :+ (destination, source, weight)
-                            new GraphImpl(isDirected, vertices, newEdges)
-                        } else {
-                            val newEdges = edges :+ (source, destination, weight)
-                            new GraphImpl(isDirected, vertices, newEdges)
-                        }
+
+                        val newEdges = edges :+ (source, destination, weight)
+                        new GraphImpl(isDirected, vertices, newEdges)
+                        
                     }
                 }
                 else
@@ -580,16 +574,20 @@ object graph
         undirectedGraph = undirectedGraph.addVertex("B")
         undirectedGraph = undirectedGraph.addVertex("C")
         undirectedGraph = undirectedGraph.addVertex("D")
-        // undirectedGraph = undirectedGraph.addVertex("E")
+        undirectedGraph = undirectedGraph.addVertex("E")
 
         //add edges
         undirectedGraph = undirectedGraph.addEdge("A", "B", 1)
+        undirectedGraph = undirectedGraph.addEdge("A", "C", 1)
+        undirectedGraph = undirectedGraph.addEdge("A", "D", 1)
+
+        undirectedGraph = undirectedGraph.addEdge("C", "B", 1)
         undirectedGraph = undirectedGraph.addEdge("C", "D", 1)
+        undirectedGraph = undirectedGraph.addEdge("D", "E", 1)
 
         // print minimum spanning tree
         println("Minimum Spanning Tree:")
         println(undirectedGraph.minimumSpanningTree)
-        println(undirectedGraph)
 
     }
 }
