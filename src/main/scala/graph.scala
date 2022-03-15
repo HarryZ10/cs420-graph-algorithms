@@ -338,7 +338,6 @@ object graph
                 {
                     // if directed, return None
                     if (!isDirected) {
-                    
                         // set of edges, initially empty
                         var out:Set[Edge[T]] = Set()
 
@@ -395,9 +394,8 @@ object graph
                         }
 
                         // if out is not the same size as the number of edges
-                        if (tree.size != vertices.size || out.size != edges.size) None
+                        if (tree.size != vertices.size) None
                         else Some(new GraphImpl(isDirected, vertices, out.map(edge => (edge.source, edge.destination, edge.weight)).toSeq))
-
 
                     } else {
                         None
