@@ -668,7 +668,7 @@ object graph
                 }
 
                 // return tour
-                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(0))).toSeq
+                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq
             }
 
 
@@ -698,10 +698,30 @@ object graph
     def main(args:Array[String])
     {
         //create an empty graph from example.csv
-        val graph = Graph.fromCSVFile(false, "src/main/Example.csv");
-        println(graph.getEdges)
-        println(graph.greedyTSP());
-        // println(graph.greedyTSP(Seq("v1", "v2", "v3", "v4", "v5", "v6")))
+        // val graph = Graph.fromCSVFile(false, "src/main/Example.csv");
+        // println(graph.getEdges)
+        // println(graph.greedyTSP());
+
+        var unDirectedGraph = Graph[String](false)
+        
+        // add vertices
+        unDirectedGraph = unDirectedGraph.addVertex("newberg")
+        unDirectedGraph = unDirectedGraph.addVertex("portland")
+        unDirectedGraph = unDirectedGraph.addVertex("seattle")
+        unDirectedGraph = unDirectedGraph.addVertex("dundee")
+        unDirectedGraph = unDirectedGraph.addVertex("richland")
+        unDirectedGraph = unDirectedGraph.addVertex("beaverton")
+
+        // add edges
+        unDirectedGraph = unDirectedGraph.addEdge("newberg", "portland", 1)
+        unDirectedGraph = unDirectedGraph.addEdge("newberg", "seattle", 2)
+        unDirectedGraph = unDirectedGraph.addEdge("newberg", "dundee", 3)
+        unDirectedGraph = unDirectedGraph.addEdge("portland", "richland", 4)
+        unDirectedGraph = unDirectedGraph.addEdge("seattle", "richland", 5)
+        unDirectedGraph = unDirectedGraph.addEdge("dundee", "richland", 6)
+        unDirectedGraph = unDirectedGraph.addEdge("beaverton", "richland", 7)
+
+        println(unDirectedGraph.greedyTSP(List("newberg", "portland", "seattle", "beaverton", "dundee", "richland")))
         
     }
 }
