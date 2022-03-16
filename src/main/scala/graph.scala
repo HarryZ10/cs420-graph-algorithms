@@ -327,39 +327,21 @@ object graph
             }
 
             def minimumSpanningTree:Option[Graph[T]] = {
-                // Graph tree = an empty graph of any type
                 var tree = Graph[T](false)
 
-                // if graph is empty, return None
-                if (vertices.isEmpty)
-                {
-                    None
-                }
+                if (vertices.isEmpty) None
                 else
                 {
                     // if directed, return None
                     if (!isDirected) {
 
-                        // Map dist = a Map from vertex to distance (number), initially empty Map parent = a Map from vertex to vertex, initially empty
                         var dist = Map[T, Int]()
-
-                        // Map parent = a Map from vertex to parent vertex, initially empty
                         var parent = Map[T, T]()
-
-                        // Set visited = a Set of vertices, initially empty
                         var visited = Set[T]()
-
                         var closest: Map[T, Int] = Map[T, Int]()
-
                         var current = 0.asInstanceOf[T]
-
-                        // start = pick arbitrary vertex
                         val start = vertices.head
-
                         var notAGraph: Boolean = false
-
-                        // for each vertex v in Graph
-
 
                         // Initialize parent and dist with vertices adjacent to start
                         for (vertex <- vertices) 
@@ -377,38 +359,22 @@ object graph
                         while (visited.size < vertices.length && !notAGraph)
                         {
                             closest = dist.filter(v => !visited.contains(v._1))
-                            
-                            if (closest.isEmpty)
-                            {
-                                notAGraph = true
-                            }
+                            if (closest.isEmpty) notAGraph = true
                             else 
                             {
-
                                 current = closest.minBy(_._2)._1
-
                                 visited += current
-                        
-                                // tree.addEdge(current, parent(current))
                                 tree = tree.addEdge(current, parent(current), dist(current))
-
-
-                                // for other in graph.adjacent(current) and other not in visited do
                                 for (other <- getAdjacent(current) if !visited.contains(other)) {
                                     
-                                    //newDist = graph.edgeW eight(current, other)
                                     var newDist = getEdgeWeight(current, other).getOrElse(Int.MaxValue)
 
-                                    //if newDist < dist(other) or other not in dist then dist.push(other, newDist)
                                     if (newDist < dist.getOrElse(other, Int.MaxValue) || !dist.contains(other)) {
                                         dist += (other -> newDist)
-
-                                        // parent.push(other, current)
                                         parent += (other -> current)
                                     }
                                 }      
-                            }
-                                         
+                            }     
                         }
                     }
                 }
