@@ -334,6 +334,7 @@ object graph
             }
 
             def minimumSpanningTree:Option[Graph[T]] = {
+
                 var tree = Graph[T](false)
                 var notAGraph: Boolean = false
                 var dist = Map[T, Int]()
@@ -341,14 +342,17 @@ object graph
                 var visited = Set[T]()
                 var closest: Map[T, Int] = Map[T, Int]()
                 var current = 0.asInstanceOf[T]
-                val start = vertices.head
+                var start = 0.asInstanceOf[T]
 
                 if (vertices.isEmpty || edges.isEmpty) 
                 {
-                    None
+                    // return empty tree
+                    Some(Graph[T](false))
                 }
                 else
                 {
+                    start = vertices.head
+
                     // if directed, return None
                     if (!isDirected) {
 
@@ -357,7 +361,7 @@ object graph
                         {
                             if (edgeExists(start, vertex))
                             {
-                                dist += (vertex -> getEdgeWeight(start, vertex).get)
+                                dist += (vertex -> getEdgeWeight(start, vertex).getOrElse(Int.MaxValue))
                                 parent += (vertex -> start)
                             }
 
@@ -387,13 +391,17 @@ object graph
                         }
                     }
 
-                    if (notAGraph)
+                    // if size of visited is equal to vertices, return tree
+                    if (visited.size != vertices.length - 1)
                     {
-                        None
+                        // return empty graph
+                        Some(Graph[T](false))
+                    }
+                    else
+                    {
+                        Some(tree)
                     }
                 }
-
-                Some(tree)
             }
 
             /**
@@ -562,6 +570,11 @@ object graph
         // print minimum spanning tree
         println("Minimum Spanning Tree:")
         println(undirectedGraph.minimumSpanningTree)
+        println(undirectedGraph.minimumSpanningTree.get.getVertices.isEmpty)
+
+        var emptyGraph = Graph[Int](false)
+        println(emptyGraph.minimumSpanningTree)
+        println(emptyGraph.minimumSpanningTree.get.getVertices.isEmpty)
 
     }
 }
