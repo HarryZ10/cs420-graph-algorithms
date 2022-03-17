@@ -132,7 +132,7 @@ object graph
                     new GraphImpl(isDirected, vertices, edges ++ edges.map(e => (e._2, e._1, e._3)))
             }
             catch {
-                case e:Exception => throw new IOException("Error reading file " + fileName)
+                case e:IOException => throw new IOException(`fileName` + " cannot be processed")
             }
         }
 
@@ -162,15 +162,10 @@ object graph
              */
             def getEdges:Iterable[Edge[T]] =
             {
-                if (isDirected)
-                {
+                var edgeSeq: Iterable[Edge[T]] =
                     edges.map(edge => new Edge(edge._1, edge._2, edge._3))
-                }
-                else
-                {
-                    edges.map(edge => new Edge(edge._1, edge._2, edge._3)) ++
-                    edges.map(edge => new Edge(edge._2, edge._1, edge._3))
-                }
+
+                edgeSeq
             }
 
 
@@ -178,7 +173,6 @@ object graph
 
                 // get the edge from the edges list
                 val edge = edges.find(e => e._1 == source && e._2 == destination)
-
                 // if edge exists, return it
                 if (edge != None)
                     Some(new Edge(edge.get._1, edge.get._2, edge.get._3))
@@ -192,7 +186,16 @@ object graph
              * @return true if an edge exists between the two given vertices
              */
             def edgeExists(source:T, destination:T):Boolean = {
-                edges.exists(edge => edge._1 == source && edge._2 == destination)
+                
+                if (isDirected)
+                {
+                    edges.exists(e => e._1 == source && e._2 == destination)
+                }
+                else
+                {
+                    edges.exists(e => e._1 == source && e._2 == destination) ||
+                    edges.exists(e => e._1 == destination && e._2 == source)
+                }
             }
 
 
@@ -202,14 +205,14 @@ object graph
              */
             def getEdgeWeight(source:T, destination:T):Option[Int] = {
                 
-                if (edgeExists(source, destination))
-                {
-                    Some(edges.filter(edge => edge._1 == source && edge._2 == destination).head._3)
-                }
+                // count each edge once even if it's undirected
+                val edge = edges.find(e => e._1 == source && e._2 == destination)
+
+                // if edge exists, return it
+                if (edge != None)
+                    Some(edge.get._3)
                 else
-                {
                     None
-                }
             }
 
 
@@ -275,7 +278,6 @@ object graph
              * @return the graph with the edge added
              */
             def addEdge(source:T, destination:T, weight:Int):Graph[T] = {
-
                 if (source == null && destination == null)
                 {
                     throw new IllegalArgumentException("Null arguments not allowed")
@@ -293,14 +295,8 @@ object graph
                     }
                     else
                     {
-                        if (!isDirected)
-                        {
-                            val newEdges = edges :+ (source, destination, weight) :+ (destination, source, weight)
-                            new GraphImpl(isDirected, vertices, newEdges)
-                        } else {
-                            val newEdges = edges :+ (source, destination, weight)
-                            new GraphImpl(isDirected, vertices, newEdges)
-                        }
+                        val newEdges = edges :+ (source, destination, weight)
+                        new GraphImpl(isDirected, vertices, newEdges)
                     }
                 }
                 else
@@ -348,68 +344,72 @@ object graph
 
             def minimumSpanningTree:Option[Graph[T]] = {
 
-                // if directed, return None
-                if (!isDirected) {
-                
-                    // set of edges, initially empty
-                    var out:Set[Edge[T]] = Set()
+                var tree = Graph[T](false)
+                var notAGraph: Boolean = false
+                var dist = Map[T, Int]()
+                var parent = Map[T, T]()
+                var visited = Set[T]()
+                var closest: Map[T, Int] = Map[T, Int]()
+                var current = 0.asInstanceOf[T]
+                var start = 0.asInstanceOf[T]
 
-                    // a map from vertex to a set of vertices, initially empty
-                    var tree:Map[T, Set[T]] = Map()
+                if (vertices.isEmpty || edges.isEmpty) 
+                {
+                    // return empty tree
+                    None
+                }
+                else
+                {
+                    start = vertices.head
 
-                    // a sorted (ascending) list of edges
-                    var sortedEdges:Seq[(T, T, Int)] = edges.toList.sortWith((e1, e2) => e1._3 < e2._3)
+                    // if directed, return None
+                    if (!isDirected) {
 
-                    // for each edge in the sorted list
-                    for (edge <- sortedEdges if tree.size != vertices.size)
-                    {
-
-                        // if the source is not in the tree
-                        if (!tree.contains(edge._1))
+                        // Initialize parent and dist with vertices adjacent to start
+                        for (vertex <- vertices) 
                         {
-                            // add the source to the tree
-                            tree = tree + (edge._1 -> Set(edge._1))
-
-                            // if the destination is not in the tree
-                            if (!tree.contains(edge._2))
+                            if (edgeExists(start, vertex))
                             {
-                                // add the destination to the tree
-                                tree = tree + (edge._2 -> Set(edge._2))
+                                dist += (vertex -> getEdgeWeight(start, vertex).getOrElse(Int.MaxValue))
+                                parent += (vertex -> start)
                             }
+
+                            tree = tree.addVertex(vertex)
                         }
 
-                        // if the destination is not in the tree
-                        if (!tree.contains(edge._2))
+                        // while visited is not equal to vertices
+                        while (visited.size < vertices.length && !notAGraph)
                         {
-                            // add the destination to the tree
-                            tree = tree + (edge._2 -> Set(edge._2))
-                        }
-
-                        // if the source and destination are in the tree
-                        if (tree.contains(edge._1) && tree.contains(edge._2))
-                        {
-                            // if the source and destination are not the same
-                            if (edge._1 != edge._2)
+                            closest = dist.filter(v => !visited.contains(v._1))
+                            if (closest.isEmpty) notAGraph = true
+                            else 
                             {
-                                // if the source and destination are not already connected
-                                if (!tree(edge._1).contains(edge._2))
-                                {
-                                    // add the edge to the set of edges
-                                    out = out + (new Edge(edge._1, edge._2, edge._3))
+                                current = closest.minBy(_._2)._1
+                                visited += current
+                                tree = tree.addEdge(current, parent(current), dist(current))
+                                for (other <- getAdjacent(current) if !visited.contains(other)) {
+                                    
+                                    var newDist = getEdgeWeight(current, other).getOrElse(Int.MaxValue)
 
-                                    // add the destination to the source's set of vertices
-                                    tree = tree + (edge._1 -> (tree(edge._1) + edge._2))
-
-                                    // add the source to the destination's set of vertices
-                                    tree = tree + (edge._2 -> (tree(edge._2) + edge._1))
-                                }
-                            }
+                                    if (newDist < dist.getOrElse(other, Int.MaxValue) || !dist.contains(other)) {
+                                        dist += (other -> newDist)
+                                        parent += (other -> current)
+                                    }
+                                }      
+                            }     
                         }
                     }
 
-                    Some(new GraphImpl(isDirected, vertices, out.map(edge => (edge.source, edge.destination, edge.weight)).toSeq))
-                } else {
-                    None
+                    // if size of visited is equal to vertices, return tree
+                    if (visited.size != vertices.length - 1)
+                    {
+                        // return empty graph
+                        None
+                    }
+                    else
+                    {
+                        Some(tree)
+                    }
                 }
             }
 
@@ -685,23 +685,10 @@ object graph
                 // List ends = graph.vertices \ depot
                 var ends = vertices.toSeq.filter(vertex => !depot.contains(vertex))
 
-
-                // for k in ends do
-                // dist({k}, k) = graph.edgeW eight(depot, k)
-                // parent({k}, k) = depot
-                // end for
                 for (k <- ends) {
                     dist += (Set(k) -> Map(k -> getEdgeWeight(depot, k).get))
                     parent += (Set(k) -> Map(k -> depot))
                 }
-
-
-                // for subSizein2...length(ends) do
-                //     for hist in all subsets of ends of size = subSize do
-                //         for k in hist do dist(hist, k) = min
-                //         x∈hist\k parent(hist, k) = x
-                //         end for end for
-                //         end for
 
                 for (subSize <- 2 to ends.size) {
                     for (hist <- ends.combinations(subSize)) {
@@ -721,7 +708,6 @@ object graph
                     }
                 }
 
-
                 // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot)
                 var opt = Long.MaxValue
                 var optParent = ends(0)
@@ -732,7 +718,6 @@ object graph
                         optParent = x
                     }
                 }
-
 
                 // return rewind(parent, opt)
                 return rewind(parent, optParent)
@@ -778,32 +763,17 @@ object graph
 
     def main(args:Array[String])
     {
-        //create an empty graph from example.csv
-        // val graph = Graph.fromCSVFile(false, "src/main/Example.csv");
-        // println(graph.getEdges)
-        // println(graph.greedyTSP());
-
-        var unDirectedGraph = Graph[String](false)
+        // Example.csv is a file with the following format:
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         
-        // add vertices
-        unDirectedGraph = unDirectedGraph.addVertex("newberg")
-        unDirectedGraph = unDirectedGraph.addVertex("portland")
-        unDirectedGraph = unDirectedGraph.addVertex("seattle")
-        unDirectedGraph = unDirectedGraph.addVertex("dundee")
-        unDirectedGraph = unDirectedGraph.addVertex("richland")
-        unDirectedGraph = unDirectedGraph.addVertex("beaverton")
+        // print minimum spanning tree
+        println("Minimum Spanning Tree:")
+        println(undirectedGraph.minimumSpanningTree)
+        println(undirectedGraph.minimumSpanningTree.get.getVertices.isEmpty)
 
-        // add edges
-        unDirectedGraph = unDirectedGraph.addEdge("newberg", "portland", 1)
-        unDirectedGraph = unDirectedGraph.addEdge("newberg", "seattle", 2)
-        unDirectedGraph = unDirectedGraph.addEdge("newberg", "dundee", 3)
-        unDirectedGraph = unDirectedGraph.addEdge("portland", "richland", 4)
-        unDirectedGraph = unDirectedGraph.addEdge("seattle", "richland", 5)
-        unDirectedGraph = unDirectedGraph.addEdge("dundee", "richland", 6)
-        unDirectedGraph = unDirectedGraph.addEdge("beaverton", "richland", 7)
+        var emptyGraph = Graph[Int](false)
+        println(emptyGraph.minimumSpanningTree)
+        println(emptyGraph.minimumSpanningTree.isEmpty)
 
-        println(unDirectedGraph.dynamicTSP)
-
-    
     }
 }
