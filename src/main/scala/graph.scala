@@ -347,7 +347,7 @@ object graph
                 if (vertices.isEmpty || edges.isEmpty) 
                 {
                     // return empty tree
-                    Some(Graph[T](false))
+                    None
                 }
                 else
                 {
@@ -395,7 +395,7 @@ object graph
                     if (visited.size != vertices.length - 1)
                     {
                         // return empty graph
-                        Some(Graph[T](false))
+                        None
                     }
                     else
                     {
@@ -574,7 +574,7 @@ object graph
 
         var emptyGraph = Graph[Int](false)
         println(emptyGraph.minimumSpanningTree)
-        println(emptyGraph.minimumSpanningTree.get.getVertices.isEmpty)
+        println(emptyGraph.minimumSpanningTree.isEmpty)
 
     }
 }
