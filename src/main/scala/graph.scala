@@ -2,6 +2,8 @@ import java.io.IOException
 import java.io.File
 import java.util.Scanner
 
+import scala.util.Random
+import scala.collection.mutable.Stack
 import scala.collection.mutable.Map
 import scala.collection.mutable.Set
 
@@ -45,6 +47,10 @@ object graph
 
         @throws(classOf[IllegalArgumentException])
         def shortestPathBetween(source:T, destination:T):Option[Seq[Edge[T]]]
+
+        def greedyTSP():Seq[Edge[T]]
+        
+        def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]]
 
         override def toString:String
     }
@@ -277,10 +283,8 @@ object graph
                     }
                     else
                     {
-
                         val newEdges = edges :+ (source, destination, weight)
                         new GraphImpl(isDirected, vertices, newEdges)
-                        
                     }
                 }
                 else
@@ -429,91 +433,205 @@ object graph
              */
             def shortestPathBetween(source:T, destination:T): Option[Seq[Edge[T]]] = {
                 // if (source == destination) return Some(Seq[Edge[T]](new Edge[T](source, destination, 0)))
-                if ((source == null || destination == null) || source == destination) {
-                    return None
+                if ((source != null || destination != null) || source != destination) {
+                    // create a mutable map of vertices and their distances from the source
+                    val distances = Map[T, Long]()
+
+                    var closest: Map[T, Long] = Map[T, Long]()
+
+                    // create a mutable map of vertices and their previous vertices
+                    val previous = Map[T, T]()
+
+                    // create a mutable list of vertices that have been visited
+                    val visited = Set[T]()
+                    
+                    var closestVertex: T = 0.asInstanceOf[T]
+
+                    var notAPath: Boolean = false
+
+
+                    // push the source vertex into distance map with 0
+                    distances += (source -> 0L)
+
+                    // push the source vertex into the previous map with placeholder
+                    previous += (source -> destination)
+
+                    // while visited size is less than the number of vertices
+                    while (visited.size < vertices.length && !notAPath) {
+
+                        closest = distances.filter(distance => !visited.contains(distance._1))
+                        
+                        // if there are no more vertices to visit, then there is no path
+                        if (closest.isEmpty) {
+                            
+                            notAPath = true
+
+                        } else {
+                            // get the closest vertex
+                            closestVertex = closest.minBy(_._2)._1
+
+                            // add the closest vertex to the visited set
+                            visited += closestVertex
+
+                            // for other in graph.adjacent(current) and other not in visited do
+                            for (other <- getAdjacent(closestVertex) if !visited.contains(other)) {
+
+                                // newDist = graph.edgeW eight(current, other) + dist(current)
+                                var newDist = getEdgeWeight(closestVertex, other).get + distances(closestVertex)
+
+                                if (newDist < distances.getOrElse(other, Long.MaxValue) || !distances.contains(other)) {
+
+                                    // dist.push(other, newDist)
+                                    distances += (other -> newDist)
+
+                                    // parent.push(other, current)
+                                    previous += (other -> closestVertex)
+                                }
+                            }
+                        }
+                    }
+
+                    // return the shortest path between the source and destination
+                    var path = IndexedSeq[T]()
+                    var current = destination
+
+                    // while current is not the source
+                    while (current != source) {
+
+                        // add current to the beginning of the path
+                        path = current +: path
+
+                        // if current is not in the previous map, then there is no path
+                        if (!previous.contains(current)) {
+                            return None
+                        } else {
+                            // set current to the previous vertex of current
+                            current = previous(current)
+                        }
+                    }
+
+                    // add the source to the beginning of the path
+                    path = source +: path
+
+                    // return edge list of the path
+                    Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq)
+
+                } else {
+                    None
                 }
 
-                // create a mutable map of vertices and their distances from the source
-                val distances = Map[T, Long]()
+            }
 
-                var closest: Map[T, Long] = Map[T, Long]()
 
-                // create a mutable map of vertices and their previous vertices
-                val previous = Map[T, T]()
+            def greedyTSP():Seq[Edge[T]] = {
 
-                // create a mutable list of vertices that have been visited
-                val visited = Set[T]()
+                var tour: Seq[T] = Seq[T]()
+                tour = makeTour(vertices.toSeq)
+                var tourDist = pathLength(tour)
                 
-                var closestVertex: T = 0.asInstanceOf[T]
+                var dist: Option[Long] = None
+                var newTour:Seq[T] = Seq[T]()
 
-                var notAPath: Boolean = false
+                // while tour dist is less than all the edge's weight
+                while (tourDist.getOrElse(Long.MaxValue) < dist.getOrElse(Long.MaxValue)) {
 
+                    // for i = 0... length(tour) - 1
+                    for (a <- 0 until tour.size - 1) {
+                        for (b <- a + 1 until tour.size) {
 
-                // push the source vertex into distance map with 0
-                distances += (source -> 0L)
+                            // newTour gets 2Opt Swap of tour, i, j
+                            newTour = twoOptSwap(tour, a, b)
 
-                // push the source vertex into the previous map with placeholder
-                previous += (source -> destination)
+                            dist = pathLength(newTour)
 
-                // while visited size is less than the number of vertices
-                while (visited.size < vertices.length && !notAPath) {
-
-                    closest = distances.filter(distance => !visited.contains(distance._1))
-                    
-                    // if there are no more vertices to visit, then there is no path
-                    if (closest.isEmpty) {
-                        
-                        notAPath = true
-
-                    } else {
-                        // get the closest vertex
-                        closestVertex = closest.minBy(_._2)._1
-
-                        // add the closest vertex to the visited set
-                        visited += closestVertex
-
-                        // for other in graph.adjacent(current) and other not in visited do
-                        for (other <- getAdjacent(closestVertex) if !visited.contains(other)) {
-
-                            // newDist = graph.edgeW eight(current, other) + dist(current)
-                            var newDist = getEdgeWeight(closestVertex, other).get + distances(closestVertex)
-
-                            if (newDist < distances.getOrElse(other, Long.MaxValue) || !distances.contains(other)) {
-
-                                // dist.push(other, newDist)
-                                distances += (other -> newDist)
-
-                                // parent.push(other, current)
-                                previous += (other -> closestVertex)
+                            // if dist < bestDist
+                            if (dist.get < tourDist.get) {
+                                tour = newTour
+                                tourDist = dist
                             }
                         }
                     }
                 }
 
-                // return the shortest path between the source and destination
-                var path = IndexedSeq[T]()
-                var current = destination
+                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(0))).toSeq
+            }
 
-                // while current is not the source
-                while (current != source) {
+            def makeTour(list: Seq[T]): Seq[T] = {
 
-                    // add current to the beginning of the path
-                    path = current +: path
+                // create a mutable list of vertices that have been visited
+                var visited = Set[T]()
+                
+                // use a stack to keep track of vertices to visit
+                var stack = Stack[T]()
 
-                    // get the previous vertex of current
-                    try {
-                        current = previous(current)
-                    }
-                    catch {
-                        case e: NoSuchElementException => return None
+                // get first vertex in list as a starting point
+                var current = list(0)
+
+                // push the first vertex into the stack
+                stack.push(current)
+                
+                // mark the first vertex as visited
+                visited += current
+
+                // until the stack is empty
+                while (!stack.isEmpty) {
+
+                    // pop the top vertex from the stack to point to current
+                    current = stack.pop()
+
+                    // for each vertex in graph.adjacent(current)
+                    for (other <- getAdjacent(current) if !visited.contains(other)) {
+
+                        // if other is not in visited
+                        // push other into stack
+                        stack.push(other)
+
+                        // mark other as visited
+                        visited += other
                     }
                 }
 
-                // add the source to the beginning of the path
-                path = source +: path
+                // return the list of vertices that have been visited
+                visited.toSeq
+            }
 
-                // return edge list of the path
-                Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toIndexedSeq)
+            def twoOptSwap(tour: Seq[T], a: Int, b: Int): Seq[T] = {
+
+                var prefix = tour.slice(0, a)
+                var mid = tour.slice(a, b)
+                var end = tour.slice(b, tour.size)
+
+                // return prefix + reverse(mid) + end
+                prefix ++ mid.reverse ++ end
+            }
+
+            def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]] = {
+
+                var tour: Seq[T] = initialTour
+                var tourDist = this.pathLength(tour)
+                var newTour: Seq[T] = Seq[T]()
+                var dist: Option[Long] = None
+
+                // while tour dist is less than all the edge's weight
+                while (tourDist.getOrElse(Long.MaxValue) < dist.getOrElse(Long.MaxValue)) {
+                    for (i <- 0 until tour.size - 1) {
+                        for (j <- i + 1 until tour.size) {
+
+                            // newTour gets 2Opt Swap of tour, i, j
+                            newTour = twoOptSwap(tour, i, j)
+                            dist = this.pathLength(newTour)
+
+                            // if dist < bestDist
+                            if (dist.getOrElse(0L) < tourDist.getOrElse(0L)) {
+                                tour = newTour
+                                tourDist = dist
+                            }
+                        }
+                    }
+                }
+
+                // return tour
+                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq
             }
 
 
@@ -544,10 +662,7 @@ object graph
     {
         // Example.csv is a file with the following format:
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
-        
-        // print minimum spanning tree
-        println("Minimum Spanning Tree:")
-        println(undirectedGraph.minimumSpanningTree)
+        println(undirectedGraph.greedyTSP)
 
     }
 }
