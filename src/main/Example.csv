@@ -5,7 +5,7 @@ seattle
 richland
 dundee
 beaverton
-7
+9
 newberg,portland,2
 newberg,seattle,10
 newberg,dundee,5
@@ -13,3 +13,5 @@ portland,richland,3
 richland,seattle,9
 richland,beaverton,7
 richland,dundee,12
+portland,dundee,1
+dundee,beaverton,2

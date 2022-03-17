@@ -177,7 +177,16 @@ object graph
              * @return true if an edge exists between the two given vertices
              */
             def edgeExists(source:T, destination:T):Boolean = {
-                edges.exists(edge => edge._1 == source && edge._2 == destination)
+                
+                if (isDirected)
+                {
+                    edges.exists(e => e._1 == source && e._2 == destination)
+                }
+                else
+                {
+                    edges.exists(e => e._1 == source && e._2 == destination) ||
+                    edges.exists(e => e._1 == destination && e._2 == source)
+                }
             }
 
 
@@ -277,10 +286,8 @@ object graph
                     }
                     else
                     {
-
                         val newEdges = edges :+ (source, destination, weight)
                         new GraphImpl(isDirected, vertices, newEdges)
-                        
                     }
                 }
                 else
@@ -328,20 +335,22 @@ object graph
 
             def minimumSpanningTree:Option[Graph[T]] = {
                 var tree = Graph[T](false)
+                var notAGraph: Boolean = false
+                var dist = Map[T, Int]()
+                var parent = Map[T, T]()
+                var visited = Set[T]()
+                var closest: Map[T, Int] = Map[T, Int]()
+                var current = 0.asInstanceOf[T]
+                val start = vertices.head
 
-                if (vertices.isEmpty) None
+                if (vertices.isEmpty || edges.isEmpty) 
+                {
+                    None
+                }
                 else
                 {
                     // if directed, return None
                     if (!isDirected) {
-
-                        var dist = Map[T, Int]()
-                        var parent = Map[T, T]()
-                        var visited = Set[T]()
-                        var closest: Map[T, Int] = Map[T, Int]()
-                        var current = 0.asInstanceOf[T]
-                        val start = vertices.head
-                        var notAGraph: Boolean = false
 
                         // Initialize parent and dist with vertices adjacent to start
                         for (vertex <- vertices) 
@@ -376,6 +385,11 @@ object graph
                                 }      
                             }     
                         }
+                    }
+
+                    if (notAGraph)
+                    {
+                        None
                     }
                 }
 
