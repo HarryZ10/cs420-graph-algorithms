@@ -675,7 +675,14 @@ object graph
 
 
             def dynamicTSP:Seq[Edge[T]] = {
-                
+
+                if (vertices.isEmpty || edges.isEmpty) {
+                    Seq[Edge[T]]()
+                }
+
+                // depot is the first vertex
+                var depot = vertices.head
+
                 // Map dist = a Map from a Set of vertices and a vertex to a distance (number), initially empty Map
                 var dist = Map[Set[T], Map[T, Long]]()
 
@@ -683,60 +690,58 @@ object graph
                 var parent = Map[Set[T], Map[T, T]]()
 
                 // List ends = graph.vertices \ depot
-                var ends = vertices.toSeq.filter(vertex => !depot.contains(vertex))
+                var ends: Set[T] = vertices.filter(v => v != depot).toSet[T]
 
                 for (k <- ends) {
-                    dist += (Set(k) -> Map(k -> getEdgeWeight(depot, k).get))
-                    parent += (Set(k) -> Map(k -> depot))
+                    // dist.put(Set(depot, k), 0)
+                    dist += (Set(depot, k) -> Map(k -> 0))
+                    // parent.put(Set(depot, k), Map(k -> depot))
+                    parent += (Set(depot, k) -> Map(k -> depot))
                 }
 
+                // for subSize in 2...length(ends)
                 for (subSize <- 2 to ends.size) {
-                    for (hist <- ends.combinations(subSize)) {
+
+                    // for hist in all subsets of ends of size = subSize
+                    for (hist <- ends.subsets(subSize)) {
+
+                        // for each vertex in hist
                         for (k <- hist) {
+
+                            // dist(hist, k) = min x∈hist\k parent(hist, k) = x dist(hist \ k, x) + graph.edgeW eight(x, k)
                             var min = Long.MaxValue
                             var minParent = k
-                            for (x <- hist.filter(x => x != k)) {
-                                var tempDist = dist(hist.filter(x => x != k))(x) + getEdgeWeight(x, k).get
+                            for (x <- hist.diff(Set(k))) {
+                               
+                                // using mutable variables
+                                var tempDist = dist(hist.diff(Set(k)))(x) + getEdgeWeight(x, k).getOrElse(0)
                                 if (tempDist < min) {
                                     min = tempDist
                                     minParent = x
                                 }
+
+
                             }
-                            dist += (hist -> (dist(hist)(k) = min))
-                            parent += (hist -> (parent(hist)(k) = minParent))
+
+                            dist += (hist -> (dist(hist).updated(k, min)))
+                            parent += (hist -> (parent(hist).updated(k, minParent)))
                         }
                     }
                 }
 
-                // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot)
+                // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot) x∈ends
                 var opt = Long.MaxValue
-                var optParent = ends(0)
+
                 for (x <- ends) {
-                    var tempDist = dist(ends)(x) + getEdgeWeight(x, depot).get
-                    if (tempDist < opt) {
-                        opt = tempDist
-                        optParent = x
+                    var d = dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(0)
+                    if (d < opt) {
+                        opt = d
                     }
                 }
 
-                // return rewind(parent, opt)
-                return rewind(parent, optParent)
+                // return edges from parent(ends, x) to x for x∈ends
+                ends.map(x => new Edge[T](parent(ends)(x), x, getEdgeWeight(parent(ends)(x), x).getOrElse(0))).toSeq
             }
-
-
-            def rewind(parent: Map[Set[T], Map[T, T]], start: T): Seq[Edge[T]] = {
-
-                // if start = depot
-                if (start == depot) {
-                    // return empty list
-                    return Seq()
-                }
-
-                // else
-                // return rewind(parent, parent(ends, start)) + (start, parent(ends, start))
-                return rewind(parent, parent(ends)(start)) ++ Seq(new Edge[T](start, parent(ends)(start), getEdgeWeight(start, parent(ends)(start)).get))
-            }
-
 
             /**
              * Returns a string representation of the graph
@@ -766,14 +771,7 @@ object graph
         // Example.csv is a file with the following format:
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         
-        // print minimum spanning tree
-        println("Minimum Spanning Tree:")
-        println(undirectedGraph.minimumSpanningTree)
-        println(undirectedGraph.minimumSpanningTree.get.getVertices.isEmpty)
-
-        var emptyGraph = Graph[Int](false)
-        println(emptyGraph.minimumSpanningTree)
-        println(emptyGraph.minimumSpanningTree.isEmpty)
+        
 
     }
 }
