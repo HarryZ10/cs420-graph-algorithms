@@ -336,41 +336,40 @@ object graph
             def minimumSpanningTree:Option[Graph[T]] = {
 
                 var tree = Graph[T](false)
-                var notAGraph: Boolean = false
                 var dist = Map[T, Int]()
                 var parent = Map[T, T]()
                 var visited = Set[T]()
+
                 var closest: Map[T, Int] = Map[T, Int]()
                 var current = 0.asInstanceOf[T]
                 var start = 0.asInstanceOf[T]
+                var notAGraph: Boolean = false
 
                 if (vertices.isEmpty || edges.isEmpty) 
                 {
-                    // return empty tree
                     None
                 }
                 else
                 {
                     start = vertices.head
 
-                    // if directed, return None
                     if (!isDirected) {
 
                         // Initialize parent and dist with vertices adjacent to start
-                        for (vertex <- vertices) 
-                        {
-                            if (edgeExists(start, vertex))
-                            {
-                                dist += (vertex -> getEdgeWeight(start, vertex).getOrElse(Int.MaxValue))
+                        for (vertex <- vertices) {
+                            if (getEdge(start, vertex).isDefined) {
                                 parent += (vertex -> start)
+                                dist += (vertex -> getEdge(start, vertex).get.weight)
                             }
 
+                            // add vertex to tree
                             tree = tree.addVertex(vertex)
                         }
 
                         // while visited is not equal to vertices
                         while (visited.size < vertices.length && !notAGraph)
                         {
+
                             closest = dist.filter(v => !visited.contains(v._1))
                             if (closest.isEmpty) notAGraph = true
                             else 
@@ -378,6 +377,7 @@ object graph
                                 current = closest.minBy(_._2)._1
                                 visited += current
                                 tree = tree.addEdge(current, parent(current), dist(current))
+
                                 for (other <- getAdjacent(current) if !visited.contains(other)) {
                                     
                                     var newDist = getEdgeWeight(current, other).getOrElse(Int.MaxValue)
@@ -391,10 +391,9 @@ object graph
                         }
                     }
 
-                    // if size of visited is equal to vertices, return tree
+                    // if disconnected, return None
                     if (visited.size != vertices.length - 1)
                     {
-                        // return empty graph
                         None
                     }
                     else
@@ -570,11 +569,34 @@ object graph
         // print minimum spanning tree
         println("Minimum Spanning Tree:")
         println(undirectedGraph.minimumSpanningTree)
-        println(undirectedGraph.minimumSpanningTree.get.getVertices.isEmpty)
 
-        var emptyGraph = Graph[Int](false)
-        println(emptyGraph.minimumSpanningTree)
-        println(emptyGraph.minimumSpanningTree.isEmpty)
+        var nonTrivialGraph = Graph[String](false)
+
+        nonTrivialGraph = nonTrivialGraph.addVertex("A")
+        nonTrivialGraph = nonTrivialGraph.addVertex("B")
+        nonTrivialGraph = nonTrivialGraph.addVertex("C")
+        nonTrivialGraph = nonTrivialGraph.addVertex("D")
+        nonTrivialGraph = nonTrivialGraph.addVertex("E")
+        nonTrivialGraph = nonTrivialGraph.addVertex("F")
+
+
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 2)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 1)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 3)
+        nonTrivialGraph = nonTrivialGraph.addEdge("C", "D", 2)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 5)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "F", 9)
+        nonTrivialGraph = nonTrivialGraph.addEdge("E", "F", 4)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "F", 2)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 2)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 1)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 1)
+
+        
+
+        // print minimum spanning tree
+        println("Minimum Spanning Tree:")
+        println(nonTrivialGraph.minimumSpanningTree.get)
 
     }
 }
