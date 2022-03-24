@@ -369,13 +369,17 @@ object graph
                         // while visited is not equal to vertices
                         while (visited.size < vertices.length && complete)
                         {
-
                             closest = dist.filter(v => !visited.contains(v._1))
-                            if (closest.isEmpty) complete = false
+                            if (closest.isEmpty)
+                            {
+                                complete = false
+                            }
                             else 
                             {
                                 current = closest.minBy(_._2)._1
+
                                 visited += current
+
                                 tree = tree.addEdge(current, parent(current), dist(current))
 
                                 for (other <- getAdjacent(current) if !visited.contains(other)) {
@@ -390,6 +394,8 @@ object graph
                             }     
                         }
                     }
+
+                    if (!complete) None
 
                     // if tree is a complete MST, return it
                     if (tree.getVertices.size == vertices.size)
