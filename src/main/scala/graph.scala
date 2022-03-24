@@ -370,6 +370,7 @@ object graph
                         while (visited.size < vertices.length && complete)
                         {
                             closest = dist.filter(v => !visited.contains(v._1))
+
                             if (closest.isEmpty)
                             {
                                 complete = false
@@ -390,8 +391,8 @@ object graph
                                         dist += (other -> newDist)
                                         parent += (other -> current)
                                     }
-                                }      
-                            }     
+                                }
+                            }
                         }
                     }
 
