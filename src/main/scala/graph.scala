@@ -343,7 +343,7 @@ object graph
                 var closest: Map[T, Int] = Map[T, Int]()
                 var current = 0.asInstanceOf[T]
                 var start = 0.asInstanceOf[T]
-                var notAGraph: Boolean = false
+                var complete: Boolean = true
 
                 if (vertices.isEmpty || edges.isEmpty) 
                 {
@@ -367,11 +367,11 @@ object graph
                         }
 
                         // while visited is not equal to vertices
-                        while (visited.size < vertices.length && !notAGraph)
+                        while (visited.size < vertices.length && complete)
                         {
 
                             closest = dist.filter(v => !visited.contains(v._1))
-                            if (closest.isEmpty) notAGraph = true
+                            if (closest.isEmpty) complete = false
                             else 
                             {
                                 current = closest.minBy(_._2)._1
@@ -391,14 +391,14 @@ object graph
                         }
                     }
 
-                    // if disconnected, return None
-                    if (visited.size != vertices.length - 1)
+                    // if tree is a complete MST, return it
+                    if (tree.getVertices.size == vertices.size)
                     {
-                        None
+                        Some(tree)
                     }
                     else
                     {
-                        Some(tree)
+                        None
                     }
                 }
             }
