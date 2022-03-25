@@ -444,7 +444,7 @@ object graph
 
                     // check if edge exists then add weight to length
                     // otherwise there is no path thus return None
-                    if (edgeExists(source, destination))
+                    if (edgeExists(source, destination) && getEdge(source, destination).isDefined)
                         length += getEdgeWeight(source, destination).get
                     else return None
 
