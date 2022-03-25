@@ -396,16 +396,13 @@ object graph
                         }
                     }
 
-                    if (!complete) None
-
-                    // if tree is a complete MST, return it
-                    if (tree.getVertices.size == vertices.size)
+                    if (!complete && visited.size < tree.getVertices.size - 1)
                     {
-                        Some(tree)
+                        None
                     }
                     else
                     {
-                        None
+                        Some(tree)
                     }
                 }
             }
@@ -603,7 +600,7 @@ object graph
 
         // print minimum spanning tree
         println("Minimum Spanning Tree:")
-        println(nonTrivialGraph.minimumSpanningTree.get)
+        println(nonTrivialGraph.minimumSpanningTree)
 
     }
 }
