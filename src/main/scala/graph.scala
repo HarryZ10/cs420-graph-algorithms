@@ -670,13 +670,14 @@ object graph
                 var parent = Map[Set[T], Map[T, T]]()
 
                 // List ends = graph.vertices \ depot
-                var ends: Set[T] = vertices.filter(v => v != depot).toSet[T]
+                var ends = vertices.filter(vertex => vertex != depot).toSet
 
                 for (k <- ends) {
-                    // dist.put(Set(depot, k), 0)
-                    dist += (Set(depot, k) -> Map(k -> 0))
-                    // parent.put(Set(depot, k), Map(k -> depot))
-                    parent += (Set(depot, k) -> Map(k -> depot))
+                    // dist ( {k}, k ) = edgeWeight(depot, k)
+                    dist += (Set(k) -> Map(k -> getEdgeWeight(depot, k).get))
+
+                    // parent ( {k}, k ) = depot
+                    parent += (Set(k) -> Map(k -> depot))
                 }
 
                 // for subSize in 2...length(ends)
@@ -685,27 +686,30 @@ object graph
                     // for hist in all subsets of ends of size = subSize
                     for (hist <- ends.subsets(subSize)) {
 
-                        // for each vertex in hist
-                        for (k <- hist) {
+                        // for k in hist
+                       for (k <- hist) {
 
-                            // dist(hist, k) = min x∈hist\k parent(hist, k) = x dist(hist \ k, x) + graph.edgeW eight(x, k)
-                            var min = Long.MaxValue
-                            var minParent = k
-                            for (x <- hist.diff(Set(k))) {
-                               
-                                // using mutable variables
-                                var tempDist = dist(hist.diff(Set(k)))(x) + getEdgeWeight(x, k).getOrElse(0)
-                                if (tempDist < min) {
-                                    min = tempDist
-                                    minParent = x
+                            // dist (hist, k) = min (dist (hist - {k}, k) + edgeWeight(k, v)) for v in ends \ hist
+                            var minDist = Long.MaxValue
+
+                            for (v <- ends.filter(vertex => !hist.contains(vertex))) {
+                                var distV = dist(hist.filterNot(vertex => vertex == k))(k) + getEdgeWeight(k, v).get
+
+                                if (distV < minDist) {
+                                    minDist = distV
                                 }
-
-
                             }
 
-                            dist += (hist -> (dist(hist).updated(k, min)))
-                            parent += (hist -> (parent(hist).updated(k, minParent)))
-                        }
+                            // dist (hist, k) = minDist
+                            dist += (hist -> (dist(hist)(k) = minDist))
+
+                            // parent (hist, k) = v
+                            parent += (hist -> (parent(hist)(k) = ends.filter(vertex => !hist.contains(vertex)).minBy(v => dist(hist)(v))))
+
+
+                       }
+                            
+                        
                     }
                 }
 
@@ -750,6 +754,6 @@ object graph
     {
         // Example.csv is a file with the following format:
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
-        println(undirectedGraph.greedyTSP)
+        println(undirectedGraph.dynamicTSP)
     }
 }
