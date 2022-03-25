@@ -402,16 +402,13 @@ object graph
                         }
                     }
 
-                    if (!complete) None
-
-                    // if tree is a complete MST, return it
-                    if (tree.getVertices.size == vertices.size)
+                    if (!complete && visited.size < tree.getVertices.size - 1)
                     {
-                        Some(tree)
+                        None
                     }
                     else
                     {
-                        None
+                        Some(tree)
                     }
                 }
             }
@@ -679,6 +676,38 @@ object graph
     {
         // Example.csv is a file with the following format:
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
-        println(undirectedGraph.greedyTSP)
+        
+        // print minimum spanning tree
+        println("Minimum Spanning Tree:")
+        println(undirectedGraph.minimumSpanningTree)
+
+        var nonTrivialGraph = Graph[String](false)
+
+        nonTrivialGraph = nonTrivialGraph.addVertex("A")
+        nonTrivialGraph = nonTrivialGraph.addVertex("B")
+        nonTrivialGraph = nonTrivialGraph.addVertex("C")
+        nonTrivialGraph = nonTrivialGraph.addVertex("D")
+        nonTrivialGraph = nonTrivialGraph.addVertex("E")
+        nonTrivialGraph = nonTrivialGraph.addVertex("F")
+
+
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 2)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 1)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 3)
+        nonTrivialGraph = nonTrivialGraph.addEdge("C", "D", 2)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 5)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "F", 9)
+        nonTrivialGraph = nonTrivialGraph.addEdge("E", "F", 4)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "F", 2)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 2)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 1)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 1)
+
+        
+
+        // print minimum spanning tree
+        println("Minimum Spanning Tree:")
+        println(nonTrivialGraph.minimumSpanningTree)
+
     }
 }
