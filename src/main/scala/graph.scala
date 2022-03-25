@@ -555,112 +555,99 @@ object graph
 
             def greedyTSP():Seq[Edge[T]] = {
 
-                var tour: Seq[T] = Seq[T]()
-                tour = makeTour(vertices.toSeq)
-                var tourDist = pathLength(tour)
-                
-                var dist: Option[Long] = None
-                var newTour:Seq[T] = Seq[T]()
+                var tour: Seq[Edge[T]] = Seq[Edge[T]]()
+                var notAPath = false
 
-                // while tour dist is less than all the edge's weight
-                while (tourDist.getOrElse(Long.MaxValue) < dist.getOrElse(Long.MaxValue)) {
+                // make a tour using nearest neighbor heuristic
+                var current = vertices.head
+                var closest: Iterable[T] = Seq[T]()
 
-                    // for i = 0... length(tour) - 1
-                    for (a <- 0 until tour.size - 1) {
-                        for (b <- a + 1 until tour.size) {
+                while (tour.size < vertices.size && !notAPath) {
 
-                            // newTour gets 2Opt Swap of tour, i, j
-                            newTour = twoOptSwap(tour, a, b)
+                    // get the closest vertex
+                    closest = getAdjacent(current)
+                    
+                    // if there are no more vertices to visit, then there is no path
+                    if (closest.isEmpty) {
+                        notAPath = true
+                    } else {
 
-                            dist = pathLength(newTour)
+                        // add the closest vertex to the tour
+                        tour = tour :+ new Edge[T](current, closest.head, getEdgeWeight(current, closest.head).get)
 
-                            // if dist < bestDist
-                            if (dist.get < tourDist.get) {
-                                tour = newTour
-                                tourDist = dist
-                            }
-                        }
+                        // set current to the closest vertex
+                        current = closest.head
                     }
+
                 }
-
-                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(0))).toSeq
-            }
-
-            def makeTour(list: Seq[T]): Seq[T] = {
-
-                // create a mutable list of vertices that have been visited
-                var visited = Set[T]()
                 
-                // use a stack to keep track of vertices to visit
-                var stack = Stack[T]()
+                var bestDist = pathLength(tour.map(edge => edge.destination))
+                var newTour: Seq[Edge[T]] = Seq[Edge[T]]()
+                var dist = 0L
 
-                // get first vertex in list as a starting point
-                var current = list(0)
+                // while there is improvement in the tour length
+                while (bestDist.get < pathLength(tour.map(edge => edge.destination)).get) {
 
-                // push the first vertex into the stack
-                stack.push(current)
-                
-                // mark the first vertex as visited
-                visited += current
-
-                // until the stack is empty
-                while (!stack.isEmpty) {
-
-                    // pop the top vertex from the stack to point to current
-                    current = stack.pop()
-
-                    // for each vertex in graph.adjacent(current)
-                    for (other <- getAdjacent(current) if !visited.contains(other)) {
-
-                        // if other is not in visited
-                        // push other into stack
-                        stack.push(other)
-
-                        // mark other as visited
-                        visited += other
-                    }
-                }
-
-                // return the list of vertices that have been visited
-                visited.toSeq
-            }
-
-            def twoOptSwap(tour: Seq[T], a: Int, b: Int): Seq[T] = {
-
-                var prefix = tour.slice(0, a)
-                var mid = tour.slice(a, b)
-                var end = tour.slice(b, tour.size)
-
-                // return prefix + reverse(mid) + end
-                prefix ++ mid.reverse ++ end
-            }
-
-            def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]] = {
-
-                var tour: Seq[T] = initialTour
-                var tourDist = this.pathLength(tour)
-                var newTour: Seq[T] = Seq[T]()
-                var dist: Option[Long] = None
-
-                // while tour dist is less than all the edge's weight
-                while (tourDist.getOrElse(Long.MaxValue) < dist.getOrElse(Long.MaxValue)) {
+                    // for i = 0 until len(tour) - 1 do
                     for (i <- 0 until tour.size - 1) {
+
                         for (j <- i + 1 until tour.size) {
+                            
+                            // newTour = tour.slice(0, i) + tour.slice(i + 1, j) + tour.slice(j, len(tour))
+                            newTour = tour.slice(0, i) ++ tour.slice(j, tour.size) ++ tour.slice(i + 1, j)
 
-                            // newTour gets 2Opt Swap of tour, i, j
-                            newTour = twoOptSwap(tour, i, j)
-                            dist = this.pathLength(newTour)
+                            // dist = graph.pathLength(newTour)
+                            dist = pathLength(newTour.map(edge => edge.destination)).get
 
-                            // if dist < bestDist
-                            if (dist.getOrElse(0L) < tourDist.getOrElse(0L)) {
+                            // if dist < bestDist then
+                            if (dist < bestDist.get) {
+
                                 tour = newTour
-                                tourDist = dist
+                                bestDist = Some(dist)
                             }
+
                         }
                     }
                 }
 
-                // return tour
+                tour :+ new Edge[T](tour.last.destination, tour.head.source, getEdgeWeight(tour.head.source, tour.last.destination).get)
+
+            }
+
+
+            def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]] = {  
+                
+                var tour = initialTour
+                var bestDist = pathLength(tour.map(vertex => vertex))
+
+                var notAPath = false
+
+                // while there is improvement in the tour length
+                while (bestDist.get < pathLength(tour.map(vertex => vertex)).get) {
+
+                    // for i = 0 until len(tour) - 1 do
+                    for (i <- 0 until tour.size - 1) {
+
+                        for (j <- i + 1 until tour.size) {
+                            
+                            // newTour = tour.slice(0, i) + tour.slice(i + 1, j) + tour.slice(j, len(tour))
+                            var newTour = tour.slice(0, i) ++ tour.slice(j, tour.size) ++ tour.slice(i + 1, j)
+
+                            // dist = graph.pathLength(newTour)
+                            var dist = pathLength(newTour.map(vertex => vertex)).get
+
+                            // if dist < bestDist then
+                            if (dist < bestDist.get) {
+
+                                tour = newTour
+                                bestDist = Some(dist)
+                            }
+
+                        }
+                    }
+                }
+
+                // return seq of edges
                 tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq
             }
 
@@ -688,39 +675,10 @@ object graph
         }
     }
 
-    def main(args:Array[String])
+    def main(args: Array[String])
     {
         // Example.csv is a file with the following format:
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         println(undirectedGraph.greedyTSP)
-
-        var nonTrivialGraph = Graph[String](false)
-
-        nonTrivialGraph = nonTrivialGraph.addVertex("A")
-        nonTrivialGraph = nonTrivialGraph.addVertex("B")
-        nonTrivialGraph = nonTrivialGraph.addVertex("C")
-        nonTrivialGraph = nonTrivialGraph.addVertex("D")
-        nonTrivialGraph = nonTrivialGraph.addVertex("E")
-        nonTrivialGraph = nonTrivialGraph.addVertex("F")
-
-
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 2)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 1)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 3)
-        nonTrivialGraph = nonTrivialGraph.addEdge("C", "D", 2)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 5)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "F", 9)
-        nonTrivialGraph = nonTrivialGraph.addEdge("E", "F", 4)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "F", 2)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 2)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 1)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 1)
-
-        
-
-        // print minimum spanning tree
-        println("Minimum Spanning Tree:")
-        println(nonTrivialGraph.minimumSpanningTree.get)
-
     }
 }
