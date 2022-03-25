@@ -362,13 +362,23 @@ object graph
                                 dist += (vertex -> getEdge(start, vertex).get.weight)
                             }
 
-                            // add vertex to tree
                             tree = tree.addVertex(vertex)
                         }
+
+                        // Initialize closest with vertices adjacent to start
+                        for (vertex <- vertices) {
+                            if (getEdge(start, vertex).isDefined) {
+                                closest += (vertex -> getEdge(start, vertex).get.weight)
+                            }
+                        }
+
+                        // Initialize visited with start
+                        visited += start
 
                         // while visited is not equal to vertices
                         while (visited.size < vertices.length && complete)
                         {
+                            // find closest vertex
                             closest = dist.filter(v => !visited.contains(v._1))
 
                             if (closest.isEmpty)
@@ -378,9 +388,11 @@ object graph
                             else 
                             {
                                 current = closest.minBy(_._2)._1
+                                
 
                                 visited += current
 
+                                // add current to tree.vertex
                                 tree = tree.addEdge(current, parent(current), dist(current))
 
                                 for (other <- getAdjacent(current) if !visited.contains(other)) {
