@@ -337,7 +337,9 @@ object graph
 
                 var tree = Graph[T](false)
                 var dist = Map[T, Int]()
-                var parent = Map[T, T]()
+                // immutable map parent 
+                var parent: Map[T, T] = Map[T, T]()
+
                 var visited = Set[T]()
 
                 var closest: Map[T, Int] = Map[T, Int]()
@@ -356,30 +358,22 @@ object graph
                     if (!isDirected) {
 
                         // Initialize parent and dist with vertices adjacent to start
-                        for (vertex <- vertices) {
-                            if (getEdge(start, vertex).isDefined) {
-                                parent += (vertex -> start)
-                                dist += (vertex -> getEdge(start, vertex).get.weight)
-                            }
+                        var parent = vertices.map(v => (v, start)).toMap
+                        var dist = edges.filter(e => e._1 == start).map(e => (e._2, e._3)).toMap
 
-                            tree = tree.addVertex(vertex)
+                        // Initialize tree with vertices
+                        for (v <- vertices) {
+                            tree = tree.addVertex(v)
                         }
 
-                        // Initialize closest with vertices adjacent to start
-                        for (vertex <- vertices) {
-                            if (getEdge(start, vertex).isDefined) {
-                                closest += (vertex -> getEdge(start, vertex).get.weight)
-                            }
-                        }
-
-                        // Initialize visited with start
+                        // // Initialize visited with start
                         visited += start
 
                         // while visited is not equal to vertices
                         while (visited.size < vertices.length && complete)
                         {
                             // find closest vertex
-                            closest = dist.filter(v => !visited.contains(v._1))
+                            var closest = dist.filter(d => !visited.contains(d._1))
 
                             if (closest.isEmpty)
                             {
@@ -389,7 +383,6 @@ object graph
                             {
                                 current = closest.minBy(_._2)._1
                                 
-
                                 visited += current
 
                                 // add current to tree.vertex
@@ -599,14 +592,14 @@ object graph
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 2)
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 1)
         nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 3)
-        nonTrivialGraph = nonTrivialGraph.addEdge("C", "D", 2)
+        // nonTrivialGraph = nonTrivialGraph.addEdge("C", "D", 2)
         nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 5)
         nonTrivialGraph = nonTrivialGraph.addEdge("B", "F", 9)
-        nonTrivialGraph = nonTrivialGraph.addEdge("E", "F", 4)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "F", 2)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 2)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 1)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 1)
+        nonTrivialGraph = nonTrivialGraph.addEdge("F", "E", 4)
+        nonTrivialGraph = nonTrivialGraph.addEdge("F", "D", 2)
+        // nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 2)
+        // nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 1)
+        // nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 1)
 
         
 
