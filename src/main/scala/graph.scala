@@ -620,7 +620,7 @@ object graph
                 var notAPath = false
 
                 // while there is improvement in the tour length
-                while (bestDist.get < pathLength(tour.map(vertex => vertex)).get) {
+                while (bestDist.getOrElse(Long.MaxValue) < pathLength(tour.map(vertex => vertex)).getOrElse(Long.MaxValue)) {
 
                     // for i = 0 until len(tour) - 1 do
                     for (i <- 0 until tour.size - 1) {
@@ -644,8 +644,10 @@ object graph
                     }
                 }
 
+                
+
                 // return seq of edges
-                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq
+                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(Int.MaxValue))).toSeq
             }
 
 
@@ -677,9 +679,7 @@ object graph
         // Example.csv is a file with the following format:
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         
-        // print minimum spanning tree
-        println("Minimum Spanning Tree:")
-        println(undirectedGraph.minimumSpanningTree)
+        println(undirectedGraph.greedyTSP)
 
         var nonTrivialGraph = Graph[String](false)
 
@@ -693,7 +693,6 @@ object graph
 
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 2)
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 1)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 3)
         nonTrivialGraph = nonTrivialGraph.addEdge("C", "D", 2)
         nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 5)
         nonTrivialGraph = nonTrivialGraph.addEdge("B", "F", 9)
@@ -704,10 +703,7 @@ object graph
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 1)
 
         
-
-        // print minimum spanning tree
-        println("Minimum Spanning Tree:")
-        println(nonTrivialGraph.minimumSpanningTree)
+        println(nonTrivialGraph.greedyTSP(Seq("A", "B", "C", "D", "E", "F")))
 
     }
 }
