@@ -620,12 +620,10 @@ object graph
         }
 
         println(totalWeight)
-        println(mst.get)
-
+        println(mst.get.getEdges.toSeq.toString)
         assert(totalWeight == 105)
         assert(mst.get.getVertices.size == 5)
         assert(mst.get.getEdges.size == 4)
         equals(mst.get.getEdge("A", "D").get, new Edge("A", "D", 10))
-
     }
 }
