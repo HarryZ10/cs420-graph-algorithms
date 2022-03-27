@@ -620,13 +620,13 @@ object graph
         // sum of weights of all edges in the graph
         var totalWeight = 0L
 
-        // for each edge in the graph
+        // for each unique edge in the graph
         for (edge <- mst.get.getEdges) {
             // add the weight of the edge to the total weight
             totalWeight += edge.weight
         }
 
-        println(totalWeight)
+        println(totalWeight / 2)
         println(mst.get)
 
     }
