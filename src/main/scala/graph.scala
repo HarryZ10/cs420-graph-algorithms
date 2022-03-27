@@ -286,8 +286,14 @@ object graph
                     }
                     else
                     {
-                        val newEdges = edges :+ (source, destination, weight)
-                        new GraphImpl(isDirected, vertices, newEdges)
+                        if (isDirected)
+                        {
+                            new GraphImpl(isDirected, vertices, edges :+ (source, destination, weight))
+                        }
+                        else
+                        {
+                            new GraphImpl(isDirected, vertices, edges :+ (source, destination, weight) :+ (destination, source, weight))
+                        }
                     }
                 }
                 else
@@ -372,6 +378,7 @@ object graph
                         // while visited is not equal to vertices
                         while (visited.size < vertices.length && complete)
                         {
+
                             // find closest vertex
                             var closest = dist.filter(d => !visited.contains(d._1))
 
@@ -382,14 +389,13 @@ object graph
                             else 
                             {
                                 current = closest.minBy(_._2)._1
-                                
+
                                 visited += current
 
-                                // add current to tree.vertex
-                                tree = tree.addEdge(current, parent(current), dist(current))
+                                tree = tree.addEdge(parent(current), current, dist(current))        
 
                                 for (other <- getAdjacent(current) if !visited.contains(other)) {
-                                    
+                                
                                     var newDist = getEdgeWeight(current, other).getOrElse(Int.MaxValue)
 
                                     if (newDist < dist.getOrElse(other, Int.MaxValue) || !dist.contains(other)) {
@@ -416,8 +422,13 @@ object graph
              * Get adjacent vertices of the source vertex given
              */
             def getAdjacent(source:T):Iterable[T] = {
-                if (vertices.contains(source)) edges.filter(edge => edge._1 == source).map(edge => edge._2)
-                else throw new IllegalArgumentException("Vertex does not exist")
+                
+                if (!vertices.contains(source))
+                {
+                    throw new IllegalArgumentException("Vertex does not exist")
+                }
+
+                edges.filter(e => (e._1 == source)).map(e => e._2)
             }
 
 
@@ -573,11 +584,11 @@ object graph
     def main(args:Array[String])
     {
         // Example.csv is a file with the following format:
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         
-        // print minimum spanning tree
-        println("Minimum Spanning Tree:")
-        println(undirectedGraph.minimumSpanningTree)
+        // // print minimum spanning tree
+        // println("Minimum Spanning Tree:")
+        // println(undirectedGraph.minimumSpanningTree)
 
         var nonTrivialGraph = Graph[String](false)
 
@@ -586,26 +597,37 @@ object graph
         nonTrivialGraph = nonTrivialGraph.addVertex("C")
         nonTrivialGraph = nonTrivialGraph.addVertex("D")
         nonTrivialGraph = nonTrivialGraph.addVertex("E")
-        nonTrivialGraph = nonTrivialGraph.addVertex("F")
+        
 
+        // nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 20)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 50)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 10)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "E", 90)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 40)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 80)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 15)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "C", 50)
+        nonTrivialGraph = nonTrivialGraph.addEdge("C", "E", 30)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 70)
 
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 2)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 1)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 3)
-        // nonTrivialGraph = nonTrivialGraph.addEdge("C", "D", 2)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 5)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "F", 9)
-        nonTrivialGraph = nonTrivialGraph.addEdge("F", "E", 4)
-        nonTrivialGraph = nonTrivialGraph.addEdge("F", "D", 2)
-        // nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 2)
-        // nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 1)
-        // nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 1)
 
         
 
         // print minimum spanning tree
         println("Minimum Spanning Tree:")
-        println(nonTrivialGraph.minimumSpanningTree)
+        var mst = nonTrivialGraph.minimumSpanningTree
+
+        // sum of weights of all edges in the graph
+        var totalWeight = 0L
+
+        // for each edge in the graph
+        for (edge <- mst.get.getEdges) {
+            // add the weight of the edge to the total weight
+            totalWeight += edge.weight
+        }
+
+        println(totalWeight)
+        println(mst.get)
 
     }
 }
