@@ -316,17 +316,8 @@ object graph
                 {
                     if (edgeExists(source, destination))
                     {
-                        if (!isDirected)
-                        {
-                            val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
-                            val newEdges2 = newEdges.filterNot(edge => edge._1 == destination && edge._2 == source)
-                            new GraphImpl(isDirected, vertices, newEdges2)
-                        }
-                        else
-                        {
-                            val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
-                            new GraphImpl(isDirected, vertices, newEdges)
-                        }
+                        val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
+                        new GraphImpl(isDirected, vertices, newEdges)
                     }
                     else
                     {
@@ -392,7 +383,9 @@ object graph
 
                                 visited += current
 
-                                tree = tree.addEdge(parent(current), current, dist(current))        
+                                tree = tree.addEdge(parent(current), current, dist(current)) 
+
+                                tree = tree.removeEdge(current, parent(current))   
 
                                 for (other <- getAdjacent(current) if !visited.contains(other)) {
                                 
@@ -626,8 +619,13 @@ object graph
             totalWeight += edge.weight
         }
 
-        println(totalWeight / 2)
+        println(totalWeight)
         println(mst.get)
+
+        assert(totalWeight == 105)
+        assert(mst.get.getVertices.size == 5)
+        assert(mst.get.getEdges.size == 4)
+        equals(mst.get.getEdge("A", "D").get, new Edge("A", "D", 10))
 
     }
 }
