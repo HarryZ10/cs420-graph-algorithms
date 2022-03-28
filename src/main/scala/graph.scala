@@ -160,12 +160,60 @@ object graph
             def getEdges:Iterable[Edge[T]] =
             {
                 // create new seq from edges using map
-                var edgeSeq: Iterable[Edge[T]] =
+                var edgeSeq: Seq[Edge[T]] =
                     edges.map(edge => new Edge(edge._1, edge._2, edge._3))
+
+                if (!isDirected) {
+                    // for each edge, delete duplicate weights
+                    edgeSeq = edgeSeq.map(edge =>
+                    {
+                        val newEdge = new Edge(edge.destination, edge.source, edge.weight)
+                        newEdge
+                    })
+
+                    // sort the edges
+                    edgeSeq = edgeSeq.sortWith((edge2, edge1) =>
+                    {
+                        if (edge2.weight > edge1.weight) false
+                        else if (edge2.weight < edge1.weight) true
+                        else false
+
+                    })
+
+                    // remove duplicate edges (same source and destination) but
+                    // don't delete different edges with the same weight
+                    edgeSeq = edgeSeq.foldLeft(Seq[Edge[T]]())((acc, edge) =>
+                    {
+                        if (acc.isEmpty ||((acc.last.weight != edge.weight) && (acc.head.source != edge.source && acc.head.destination != edge.destination)))
+                            acc :+ edge
+                        else
+                            acc
+                    })
+
+                    // add back the edges with the same weight but different source and destination
+                    for (i <- 0 until edges.size)
+                    {
+                        // Conditions
+                        // add missing edges with the same weight
+                        // the edges cannot be a reverse of an existing edge
+                        // the edges cannot be a duplicate of an existing edge
+
+                        // if the edge is not a reverse of an existing edge
+                        if (!edgeSeq.exists(edge => edge.source == edges(i)._2 && edge.destination == edges(i)._1 && edge.weight == edges(i)._3))
+                        {
+                            // if the edge is not a duplicate of an existing edge
+                            if (!edgeSeq.exists(edge => edge.source == edges(i)._1 && edge.destination == edges(i)._2 && edge.weight == edges(i)._3))
+                            {
+                                edgeSeq = edgeSeq :+ new Edge(edges(i)._1, edges(i)._2, edges(i)._3)
+                            }
+                        }
+                    }
+                    
+                    
+                }
 
                 edgeSeq
             }
-
 
             def getEdge(source:T, destination:T):Option[Edge[T]] = {
 
@@ -293,8 +341,14 @@ object graph
                     }
                     else
                     {
-                        val newEdges = edges :+ (source, destination, weight)
-                        new GraphImpl(isDirected, vertices, newEdges)
+                        if (isDirected)
+                        {
+                            new GraphImpl(isDirected, vertices, edges :+ (source, destination, weight))
+                        }
+                        else
+                        {
+                            new GraphImpl(isDirected, vertices, edges :+ (source, destination, weight) :+ (destination, source, weight))
+                        }
                     }
                 }
                 else
@@ -317,17 +371,8 @@ object graph
                 {
                     if (edgeExists(source, destination))
                     {
-                        if (!isDirected)
-                        {
-                            val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
-                            val newEdges2 = newEdges.filterNot(edge => edge._1 == destination && edge._2 == source)
-                            new GraphImpl(isDirected, vertices, newEdges2)
-                        }
-                        else
-                        {
-                            val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
-                            new GraphImpl(isDirected, vertices, newEdges)
-                        }
+                        val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
+                        new GraphImpl(isDirected, vertices, newEdges)
                     }
                     else
                     {
@@ -344,7 +389,9 @@ object graph
 
                 var tree = Graph[T](false)
                 var dist = Map[T, Int]()
-                var parent = Map[T, T]()
+                // immutable map parent 
+                var parent: Map[T, T] = Map[T, T]()
+
                 var visited = Set[T]()
 
                 var closest: Map[T, Int] = Map[T, Int]()
@@ -363,20 +410,23 @@ object graph
                     if (!isDirected) {
 
                         // Initialize parent and dist with vertices adjacent to start
-                        for (vertex <- vertices) {
-                            if (getEdge(start, vertex).isDefined) {
-                                parent += (vertex -> start)
-                                dist += (vertex -> getEdge(start, vertex).get.weight)
-                            }
+                        var parent = vertices.map(v => (v, start)).toMap
+                        var dist = edges.filter(e => e._1 == start).map(e => (e._2, e._3)).toMap
 
-                            // add vertex to tree
-                            tree = tree.addVertex(vertex)
+                        // Initialize tree with vertices
+                        for (v <- vertices) {
+                            tree = tree.addVertex(v)
                         }
+
+                        // // Initialize visited with start
+                        visited += start
 
                         // while visited is not equal to vertices
                         while (visited.size < vertices.length && complete)
                         {
-                            closest = dist.filter(v => !visited.contains(v._1))
+
+                            // find closest vertex
+                            var closest = dist.filter(d => !visited.contains(d._1))
 
                             if (closest.isEmpty)
                             {
@@ -388,10 +438,12 @@ object graph
 
                                 visited += current
 
-                                tree = tree.addEdge(current, parent(current), dist(current))
+                                tree = tree.addEdge(parent(current), current, dist(current)) 
+
+                                tree = tree.removeEdge(current, parent(current))   
 
                                 for (other <- getAdjacent(current) if !visited.contains(other)) {
-                                    
+                                
                                     var newDist = getEdgeWeight(current, other).getOrElse(Int.MaxValue)
 
                                     if (newDist < dist.getOrElse(other, Int.MaxValue) || !dist.contains(other)) {
@@ -403,16 +455,13 @@ object graph
                         }
                     }
 
-                    if (!complete) None
-
-                    // if tree is a complete MST, return it
-                    if (tree.getVertices.size == vertices.size)
+                    if (!complete && visited.size < tree.getVertices.size - 1)
                     {
-                        Some(tree)
+                        None
                     }
                     else
                     {
-                        None
+                        Some(tree)
                     }
                 }
             }
@@ -421,8 +470,13 @@ object graph
              * Get adjacent vertices of the source vertex given
              */
             def getAdjacent(source:T):Iterable[T] = {
-                if (vertices.contains(source)) edges.filter(edge => edge._1 == source).map(edge => edge._2)
-                else throw new IllegalArgumentException("Vertex does not exist")
+                
+                if (!vertices.contains(source))
+                {
+                    throw new IllegalArgumentException("Vertex does not exist")
+                }
+
+                edges.filter(e => (e._1 == source)).map(e => e._2)
             }
 
 
