@@ -640,7 +640,7 @@ object graph
                 var dist = 0L
 
                 // while there is improvement in the tour length
-                while (bestDist.get < pathLength(tour.map(edge => edge.destination)).get) {
+                while (bestDist.isDefined && bestDist.getOrElse(0L) > dist) {
 
                     // for i = 0 until len(tour) - 1 do
                     for (i <- 0 until tour.size - 1) {
@@ -651,10 +651,10 @@ object graph
                             newTour = tour.slice(0, i) ++ tour.slice(j, tour.size) ++ tour.slice(i + 1, j)
 
                             // dist = graph.pathLength(newTour)
-                            dist = pathLength(newTour.map(edge => edge.destination)).get
+                            dist = pathLength(newTour.map(edge => edge.destination)).getOrElse(0L)
 
                             // if dist < bestDist then
-                            if (dist < bestDist.get) {
+                            if (dist < bestDist.getOrElse(0L)) {
 
                                 tour = newTour
                                 bestDist = Some(dist)
@@ -664,8 +664,7 @@ object graph
                     }
                 }
 
-                tour :+ new Edge[T](tour.last.destination, tour.head.source, getEdgeWeight(tour.head.source, tour.last.destination).get)
-
+                tour
             }
 
 
