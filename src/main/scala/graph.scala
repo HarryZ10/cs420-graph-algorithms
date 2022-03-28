@@ -685,14 +685,8 @@ object graph
 
     def main(args: Array[String])
     {
-        // Example.csv is a file with the following format:
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
-        
-        // // print minimum spanning tree
-        // println("Minimum Spanning Tree:")
-        // println(undirectedGraph.minimumSpanningTree)
-
         var nonTrivialGraph = Graph[String](false)
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
 
         nonTrivialGraph = nonTrivialGraph.addVertex("A")
         nonTrivialGraph = nonTrivialGraph.addVertex("B")
@@ -713,23 +707,7 @@ object graph
         nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 70)
 
         // print minimum spanning tree
-        println("Minimum Spanning Tree:")
-        var mst = nonTrivialGraph.minimumSpanningTree
-
-        // sum of weights of all edges in the graph
-        var totalWeight = 0L
-
-        // for each unique edge in the graph
-        for (edge <- mst.get.getEdges) {
-            // add the weight of the edge to the total weight
-            totalWeight += edge.weight
-        }
-
-        println(totalWeight)
-        println(mst.get.getEdges.toSeq.toString)
-        assert(totalWeight == 105)
-        assert(mst.get.getVertices.size == 5)
-        assert(mst.get.getEdges.size == 4)
-        equals(mst.get.getEdge("A", "D").get, new Edge("A", "D", 10))
+        println("Greedy TSP:")
+        println(nonTrivialGraph.greedyTSP)
     }
 }
