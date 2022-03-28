@@ -46,8 +46,6 @@ object graph
         @throws(classOf[IllegalArgumentException])
         def shortestPathBetween(source:T, destination:T):Option[Seq[Edge[T]]]
 
-        def addEdgeMST(source:T, destination:T, weight:Int):Graph[T]
-
         override def toString:String
     }
 
@@ -155,8 +153,35 @@ object graph
             def getEdges:Iterable[Edge[T]] =
             {
                 // create new seq from edges using map
-                var edgeSeq: Iterable[Edge[T]] =
+                var edgeSeq: Seq[Edge[T]] =
                     edges.map(edge => new Edge(edge._1, edge._2, edge._3))
+
+                if (!isDirected) {
+                    // for each edge, delete duplicate weights
+                    edgeSeq = edgeSeq.map(edge =>
+                    {
+                        val newEdge = new Edge(edge.destination, edge.source, edge.weight)
+                        newEdge
+                    })
+
+                    // sort the edges
+                    edgeSeq = edgeSeq.sortWith((edge2, edge1) =>
+                    {
+                        if (edge2.weight > edge1.weight) false
+                        else if (edge2.weight < edge1.weight) true
+                        else false
+                    })
+
+                    // remove duplicate edges (same source and destination)
+                    edgeSeq = edgeSeq.foldLeft(Seq[Edge[T]]())((acc, edge) =>
+                    {
+                        if (acc.isEmpty || acc.last.weight != edge.weight)
+                            acc :+ edge
+                        else
+                            acc
+                    })
+                    
+                }
 
                 edgeSeq
             }
@@ -288,34 +313,6 @@ object graph
                     }
                     else
                     {
-                        new GraphImpl(isDirected, vertices, edges :+ (source, destination, weight))
-                    }
-                }
-                else
-                {
-                    throw new IllegalArgumentException("One or both vertices do not exist")
-                }
-            }
-
-
-            def addEdgeMST(source:T, destination:T, weight:Int):Graph[T] = {
-                if (source == null && destination == null)
-                {
-                    throw new IllegalArgumentException("Null arguments not allowed")
-                }
-
-                if (vertices.contains(source) && vertices.contains(destination))
-                {
-                    if (edgeExists(source, destination))
-                    {
-                        throw new IllegalArgumentException("Edge already exists")
-                    }
-                    else if (source == destination)
-                    {
-                        throw new IllegalArgumentException("Loops are not allowed")
-                    }
-                    else
-                    {
                         if (isDirected)
                         {
                             new GraphImpl(isDirected, vertices, edges :+ (source, destination, weight))
@@ -413,7 +410,9 @@ object graph
 
                                 visited += current
 
-                                tree = tree.addEdgeMST(parent(current), current, dist(current)) 
+                                tree = tree.addEdge(parent(current), current, dist(current)) 
+
+                                tree = tree.removeEdge(current, parent(current))   
 
                                 for (other <- getAdjacent(current) if !visited.contains(other)) {
                                 
@@ -648,7 +647,12 @@ object graph
         }
 
         println(totalWeight)
-        println(mst.get.getEdges.toSeq.toString)
+        println(mst.get)
         println(nonTrivialGraph.getEdges)
+
+        assert(totalWeight == 105)
+        assert(mst.get.getVertices.size == 5)
+        assert(mst.get.getEdges.size == 4)
+        equals(mst.get.getEdge("A", "D").get, new Edge("A", "D", 10))
     }
 }
