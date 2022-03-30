@@ -715,70 +715,115 @@ object graph
                 }
 
                 // depot is the first vertex
-                var depot = vertices.head
+                var depot: T = vertices.head
 
                 // Map dist = a Map from a Set of vertices and a vertex to a distance (number), initially empty Map
-                var dist = Map[Set[T], Map[T, Long]]()
+                var dist = Map[Set[T], Map[T, Int]]()
 
                 // parent = a Map from a Set of vertices and a vertex to a vertex, initially empty
                 var parent = Map[Set[T], Map[T, T]]()
 
                 // List ends = graph.vertices \ depot
-                var ends = vertices.filter(vertex => vertex != depot).toSet
+                var ends: Set[T] = Set[T]()
+                ends = ends ++ Set(vertices.tail: _*)
+                var minVertex = ends.head
 
+
+                // for k in ends
                 for (k <- ends) {
-                    // dist ( {k}, k ) = edgeWeight(depot, k)
-                    dist += (Set(k) -> Map(k -> getEdgeWeight(depot, k).get))
 
-                    // parent ( {k}, k ) = depot
+                    // dist ({k},k) = edgeWeight(depot, k)
+                    dist += (Set(k) -> Map(k -> getEdgeWeight(depot, k).getOrElse(Int.MaxValue)))
+
+                    // parent ({k},k) = depot
                     parent += (Set(k) -> Map(k -> depot))
                 }
 
-                // for subSize in 2...length(ends)
+                println(dist)
+                println(parent)
+
                 for (subSize <- 2 to ends.size) {
 
-                    // for hist in all subsets of ends of size = subSize
+                    //for hist in all subsets of ends of size = subSize
                     for (hist <- ends.subsets(subSize)) {
 
                         // for k in hist
-                       for (k <- hist) {
+                        for (k <- hist) {
 
-                            // dist (hist, k) = min (dist (hist - {k}, k) + edgeWeight(k, v)) for v in ends \ hist
+                            // find the vertex x that minimizes the following expression. The result is the distance, i.e. a∈hist
+                            // number, to x from depot given hist.
+
                             var minDist = Long.MaxValue
+                            
+                            // x∈hist\k for all x∈hist
+                            for (x <- hist if x != k) {
 
-                            for (v <- ends.filter(vertex => !hist.contains(vertex))) {
-                                var distV = dist(hist.filterNot(vertex => vertex == k))(k) + getEdgeWeight(k, v).get
+                                // dist(hist, k) = min(dist(hist, k), dist(hist, x) + edgeWeight(x, k))
+                                // hist is immutable, so we need to create a new one
+                                var newHist: Set[T] = hist - k
+                                println("before dist:", dist)
+                                println("hist:", hist)
+                                println("newHist:", newHist)
+                                println("x:", x)
+                                println("dist(newHist):", dist(newHist)(x))
+                            
 
-                                if (distV < minDist) {
-                                    minDist = distV
+                                dist(hist)(k) = Math.min(dist(hist)(k), dist(newHist)(x) + getEdgeWeight(x, k).getOrElse(Int.MaxValue))
+                                
+
+                                // if dist(hist, k) < minDist
+                                if (dist(newHist)(k) < minDist) {
+
+                                    // minDist = dist(hist, k)
+                                    minDist = dist(newHist)(k)
+
+                                    // minVertex = x
+                                    minVertex = x
                                 }
                             }
 
-                            // dist (hist, k) = minDist
-                            dist += (hist -> (dist(hist)(k) = minDist))
-
-                            // parent (hist, k) = v
-                            parent += (hist -> (parent(hist)(k) = ends.filter(vertex => !hist.contains(vertex)).minBy(v => dist(hist)(v))))
-
-
-                       }
-                            
-                        
+                            // parent(hist, k) = x
+                            parent += (hist -> Map(k -> minVertex))
+                        }
                     }
                 }
 
-                // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot) x∈ends
+                // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot)
                 var opt = Long.MaxValue
+                var optVertex = ends.head
 
+                // for x in ends
                 for (x <- ends) {
-                    var d = dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(0)
-                    if (d < opt) {
-                        opt = d
+
+                    // if dist(ends, x) + graph.edgeWeight(x, depot) < opt
+                    if (dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue) < opt) {
+
+                        // opt = dist(ends, x) + graph.edgeWeight(x, depot)
+                        opt = dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue)
+
+                        // optVertex = x
+                        var optVertex = x
                     }
                 }
 
-                // return edges from parent(ends, x) to x for x∈ends
-                ends.map(x => new Edge[T](parent(ends)(x), x, getEdgeWeight(parent(ends)(x), x).getOrElse(0))).toSeq
+                // return seq of edges
+                var tour = Seq[Edge[T]]()
+
+                // while optVertex ≠ depot
+                while (optVertex != depot) {
+
+                    // tour = tour + (parent(ends, optVertex), optVertex)
+                    tour = tour :+ new Edge[T](parent(ends)(optVertex), optVertex, getEdgeWeight(optVertex, parent(ends)(optVertex)).get)
+
+                    // optVertex = parent(ends, optVertex)
+                    optVertex = parent(ends)(optVertex)
+                }
+
+                // tour = tour + (depot, optVertex)
+                tour = tour :+ new Edge[T](depot, optVertex, getEdgeWeight(optVertex, depot).get)
+
+                // return tour
+                tour
             }
 
             /**
