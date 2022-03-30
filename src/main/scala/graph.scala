@@ -729,7 +729,7 @@ object graph
                 var minVertex = ends.head
 
 
-                // for k in ends
+                // BASE CASE CLEARED!
                 for (k <- ends) {
 
                     // dist ({k},k) = edgeWeight(depot, k)
@@ -739,9 +739,7 @@ object graph
                     parent += (Set(k) -> Map(k -> depot))
                 }
 
-                println(dist)
-                println(parent)
-
+                // RECURSIVE CASE
                 for (subSize <- 2 to ends.size) {
 
                     //for hist in all subsets of ends of size = subSize
@@ -753,7 +751,7 @@ object graph
                             // find the vertex x that minimizes the following expression. The result is the distance, i.e. a∈hist
                             // number, to x from depot given hist.
 
-                            var minDist = Long.MaxValue
+                            var minDist = Int.MaxValue
                             
                             // x∈hist\k for all x∈hist
                             for (x <- hist if x != k) {
@@ -761,25 +759,31 @@ object graph
                                 // dist(hist, k) = min(dist(hist, k), dist(hist, x) + edgeWeight(x, k))
                                 // hist is immutable, so we need to create a new one
                                 var newHist: Set[T] = hist - k
-                                println("before dist:", dist)
-                                println("hist:", hist)
-                                println("newHist:", newHist)
-                                println("x:", x)
-                                println("dist(newHist):", dist(newHist)(x))
                             
-
-                                dist(hist)(k) = Math.min(dist(hist)(k), dist(newHist)(x) + getEdgeWeight(x, k).getOrElse(Int.MaxValue))
-                                
-
-                                // if dist(hist, k) < minDist
-                                if (dist(newHist)(k) < minDist) {
-
-                                    // minDist = dist(hist, k)
-                                    minDist = dist(newHist)(k)
-
-                                    // minVertex = x
-                                    minVertex = x
+                                try {
+                                    var newDist = dist(newHist)(x) + getEdgeWeight(x, k).getOrElse(Int.MaxValue)
+                                    if (newDist < minDist) {
+                                        minDist = newDist
+                                        minVertex = x
+                                        
+                                    }
+                                } catch {
+                                    case e: NoSuchElementException => {
+                                        // do nothing
+                                    }
                                 }
+                                
+                                dist += (hist -> Map(k -> minDist))
+
+                                // // if dist(hist, k) < minDist
+                                // if (dist(newHist)(k) < minDist) {
+
+                                //     // minDist = dist(hist, k)
+                                //     minDist = dist(newHist)(k)
+
+                                //     // minVertex = x
+                                //     minVertex = x
+                                // }
                             }
 
                             // parent(hist, k) = x
@@ -795,14 +799,21 @@ object graph
                 // for x in ends
                 for (x <- ends) {
 
-                    // if dist(ends, x) + graph.edgeWeight(x, depot) < opt
-                    if (dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue) < opt) {
+                    try {
+                        // if dist(ends, x) + graph.edgeWeight(x, depot) < opt
+                        if (dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue) < opt) {
 
-                        // opt = dist(ends, x) + graph.edgeWeight(x, depot)
-                        opt = dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue)
+                            // opt = dist(ends, x) + graph.edgeWeight(x, depot)
+                            opt = dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue)
 
-                        // optVertex = x
-                        var optVertex = x
+                            // optVertex = x
+                            var optVertex = x
+                        }
+                    }
+                    catch {
+                        case e: NoSuchElementException => {
+                            // do nothing
+                        }
                     }
                 }
 
