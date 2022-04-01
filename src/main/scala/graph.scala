@@ -608,63 +608,10 @@ object graph
 
 
             def greedyTSP():Seq[Edge[T]] = {
+                // random order of vertices
+                val randomOrder = scala.util.Random.shuffle(vertices)
 
-                var tour: Seq[Edge[T]] = Seq[Edge[T]]()
-                var notAPath = false
-
-                // make a tour using nearest neighbor heuristic
-                var current = vertices.head
-                var closest: Iterable[T] = Seq[T]()
-
-                while (tour.size < vertices.size && !notAPath) {
-
-                    // get the closest vertex
-                    closest = getAdjacent(current)
-                    
-                    // if there are no more vertices to visit, then there is no path
-                    if (closest.isEmpty) {
-                        notAPath = true
-                    } else {
-
-                        // add the closest vertex to the tour
-                        tour = tour :+ new Edge[T](current, closest.head, getEdgeWeight(current, closest.head).get)
-
-                        // set current to the closest vertex
-                        current = closest.head
-                    }
-
-                }
-                
-                var bestDist = pathLength(tour.map(edge => edge.destination))
-                var newTour: Seq[Edge[T]] = Seq[Edge[T]]()
-                var dist = 0L
-
-                // while there is improvement in the tour length
-                while (bestDist.isDefined && bestDist.getOrElse(0L) > dist) {
-
-                    // for i = 0 until len(tour) - 1 do
-                    for (i <- 0 until tour.size - 1) {
-
-                        for (j <- i + 1 until tour.size) {
-                            
-                            // newTour = tour.slice(0, i) + tour.slice(i + 1, j) + tour.slice(j, len(tour))
-                            newTour = tour.slice(0, i) ++ tour.slice(j, tour.size) ++ tour.slice(i + 1, j)
-
-                            // dist = graph.pathLength(newTour)
-                            dist = pathLength(newTour.map(edge => edge.destination)).getOrElse(0L)
-
-                            // if dist < bestDist then
-                            if (dist < bestDist.getOrElse(0L)) {
-
-                                tour = newTour
-                                bestDist = Some(dist)
-                            }
-
-                        }
-                    }
-                }
-
-                tour
+                greedyTSP(randomOrder)
             }
 
 
@@ -700,7 +647,8 @@ object graph
                     }
                 }
 
-                
+                // add source to end of tour 
+                tour = tour :+ tour.head
 
                 // return seq of edges
                 tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(Int.MaxValue))).toSeq
@@ -742,7 +690,7 @@ object graph
         nonTrivialGraph = nonTrivialGraph.addVertex("E")
         
 
-        // nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 20)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 20)
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 50)
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 10)
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "E", 90)
