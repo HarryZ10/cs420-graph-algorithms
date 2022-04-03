@@ -499,7 +499,7 @@ object graph
 
                     // check if edge exists then add weight to length
                     // otherwise there is no path thus return None
-                    if (edgeExists(source, destination))
+                    if (edgeExists(source, destination) && getEdge(source, destination).isDefined)
                         length += getEdgeWeight(source, destination).get
                     else return None
 
@@ -609,64 +609,7 @@ object graph
 
 
             def greedyTSP():Seq[Edge[T]] = {
-
-                var tour: Seq[Edge[T]] = Seq[Edge[T]]()
-                var notAPath = false
-
-                // make a tour using nearest neighbor heuristic
-                var current = vertices.head
-                var closest: Iterable[T] = Seq[T]()
-
-                while (tour.size < vertices.size && !notAPath) {
-
-                    // get the closest vertex
-                    closest = getAdjacent(current)
-                    
-                    // if there are no more vertices to visit, then there is no path
-                    if (closest.isEmpty) {
-                        notAPath = true
-                    } else {
-
-                        // add the closest vertex to the tour
-                        tour = tour :+ new Edge[T](current, closest.head, getEdgeWeight(current, closest.head).get)
-
-                        // set current to the closest vertex
-                        current = closest.head
-                    }
-
-                }
-                
-                var bestDist = pathLength(tour.map(edge => edge.destination))
-                var newTour: Seq[Edge[T]] = Seq[Edge[T]]()
-                var dist = 0L
-
-                // while there is improvement in the tour length
-                while (bestDist.get < pathLength(tour.map(edge => edge.destination)).get) {
-
-                    // for i = 0 until len(tour) - 1 do
-                    for (i <- 0 until tour.size - 1) {
-
-                        for (j <- i + 1 until tour.size) {
-                            
-                            // newTour = tour.slice(0, i) + tour.slice(i + 1, j) + tour.slice(j, len(tour))
-                            newTour = tour.slice(0, i) ++ tour.slice(j, tour.size) ++ tour.slice(i + 1, j)
-
-                            // dist = graph.pathLength(newTour)
-                            dist = pathLength(newTour.map(edge => edge.destination)).get
-
-                            // if dist < bestDist then
-                            if (dist < bestDist.get) {
-
-                                tour = newTour
-                                bestDist = Some(dist)
-                            }
-
-                        }
-                    }
-                }
-
-                tour :+ new Edge[T](tour.last.destination, tour.head.source, getEdgeWeight(tour.head.source, tour.last.destination).get)
-
+                greedyTSP(vertices.toSeq)
             }
 
 
@@ -702,8 +645,11 @@ object graph
                     }
                 }
 
+                // connect the last edge to the start of the tour
+                tour = tour :+ tour.head
+
                 // return seq of edges
-                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq
+                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(Int.MaxValue))).toSeq
             }
 
 
