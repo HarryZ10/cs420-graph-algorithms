@@ -608,10 +608,7 @@ object graph
 
 
             def greedyTSP():Seq[Edge[T]] = {
-                // random order of vertices
-                val randomOrder = scala.util.Random.shuffle(vertices)
-
-                greedyTSP(randomOrder)
+                greedyTSP(vertices.toSeq)
             }
 
 
@@ -623,7 +620,7 @@ object graph
                 var notAPath = false
 
                 // while there is improvement in the tour length
-                while (bestDist.getOrElse(Long.MaxValue) < pathLength(tour.map(vertex => vertex)).getOrElse(Long.MaxValue)) {
+                while (bestDist.get < pathLength(tour.map(vertex => vertex)).get) {
 
                     // for i = 0 until len(tour) - 1 do
                     for (i <- 0 until tour.size - 1) {
@@ -647,7 +644,7 @@ object graph
                     }
                 }
 
-                // add source to end of tour 
+                // connect the last edge to the start of the tour
                 tour = tour :+ tour.head
 
                 // return seq of edges
