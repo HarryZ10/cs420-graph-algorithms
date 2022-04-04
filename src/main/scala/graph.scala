@@ -612,30 +612,34 @@ object graph
             }
 
 
-            def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]] = {  
+            def greedyTSP(initialTour:Seq[T]): Seq[Edge[T]] = {  
                 
                 var tour = initialTour
                 var bestDist = pathLength(tour.map(vertex => vertex))
-
-                var notAPath = false
 
                 // while there is improvement in the tour length
                 while (bestDist.get < pathLength(tour.map(vertex => vertex)).get) {
 
                     // for i = 0 until len(tour) - 1 do
-                    for (i <- 0 until tour.size - 1) {
+                    for (i <- 0 until tour.size - 1 if tour.size > 2) {
 
                         for (j <- i + 1 until tour.size) {
                             
-                            // newTour = tour.slice(0, i) + tour.slice(i + 1, j) + tour.slice(j, len(tour))
-                            var newTour = tour.slice(0, i) ++ tour.slice(j, tour.size) ++ tour.slice(i + 1, j)
+                            // prefix = tour[0 : i]
+                            // mid = tour[i : k]
+                            // end = tour[k : length(tour)]
+                            val prefix = tour.slice(0, i)
+                            val mid = tour.slice(i, j)
+                            val end = tour.slice(j, tour.size)
+
+                            // prefix + reverse(mid) + end
+                            val newTour = prefix ++ mid.reverse ++ end
 
                             // dist = graph.pathLength(newTour)
                             var dist = pathLength(newTour.map(vertex => vertex)).get
 
                             // if dist < bestDist then
                             if (dist < bestDist.get) {
-
                                 tour = newTour
                                 bestDist = Some(dist)
                             }
@@ -692,7 +696,7 @@ object graph
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 10)
         nonTrivialGraph = nonTrivialGraph.addEdge("A", "E", 90)
         nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 40)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 80)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 10)
         nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 15)
         nonTrivialGraph = nonTrivialGraph.addEdge("D", "C", 50)
         nonTrivialGraph = nonTrivialGraph.addEdge("C", "E", 30)
