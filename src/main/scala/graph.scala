@@ -721,6 +721,7 @@ object graph
 
                     // for tour in pop do
                     for (tour <- pop) {
+
                         // newTour = copy(tour)
                         var newTour = tour
                         // startCity = randomCity(newT our)
@@ -838,7 +839,7 @@ object graph
     def main(args: Array[String])
     {
         // var nonTrivialGraph = Graph[String](false)
-        // var undirectedGraph1 = Graph.fromCSVFile(false, "src/main/Example.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
 
         var path = undirectedGraph.geneticTSP(100, 0.2f, 1000)
