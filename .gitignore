@@ -5,5 +5,5 @@ target
 .vscode/
 .metals/
 .bsp/
-
 .bloop/
+.bloop/graph/graph-analysis.bin
