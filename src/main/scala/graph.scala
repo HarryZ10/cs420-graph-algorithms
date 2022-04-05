@@ -6,6 +6,7 @@ import scala.util.Random
 import scala.collection.mutable.Stack
 import scala.collection.mutable.Map
 import scala.collection.mutable.Set
+import scala.util.Try
 
 object graph
 {
@@ -495,6 +496,8 @@ object graph
                 
                 var length = 0L
                 var i = 0
+                var notAPath: Boolean = false;
+                var returnLength: Option[Long] = Option.empty[Long]
 
                 while (i < path.size - 1)
                 {
@@ -504,16 +507,21 @@ object graph
 
                     // check if edge exists then add weight to length
                     // otherwise there is no path thus return None
-                    if (edgeExists(source, destination) && getEdge(source, destination).isDefined)
+                    if (edgeExists(source, destination))
                         length += getEdgeWeight(source, destination).get
-                    else return None
+                    else {
+                        notAPath = true;
+                    }
 
                     // keep going until we reach the end of the path
                     i += 1
                 }
 
-                // return the length of the path
-                Some(length)
+                if (!notAPath) {
+                    returnLength = Try(length).toOption
+                }
+                
+                returnLength
             }
 
 
@@ -614,40 +622,45 @@ object graph
 
 
             def greedyTSP():Seq[Edge[T]] = {
-                greedyTSP(vertices.toSeq)
+                greedyTSP(vertices.toSeq ++ Seq(vertices.toSeq.head))
             }
 
 
             def greedyTSP(initialTour:Seq[T]): Seq[Edge[T]] = {  
                 
                 var tour = initialTour
-                var bestDist = pathLength(tour.map(vertex => vertex))
+                
+                var improving = true;
 
                 // while there is improvement in the tour length
-                while (bestDist.get < pathLength(tour.map(vertex => vertex)).get) {
+                while (improving) {
+
+                    improving = false;
 
                     // for i = 0 until len(tour) - 1 do
                     for (i <- 0 until tour.size - 1 if tour.size > 2) {
 
                         for (j <- i + 1 until tour.size) {
                             
+                            
                             // prefix = tour[0 : i]
                             // mid = tour[i : k]
                             // end = tour[k : length(tour)]
                             val prefix = tour.slice(0, i)
                             val mid = tour.slice(i, j)
-                            val end = tour.slice(j, tour.size)
+                            val end = tour.slice(j, tour.length)
 
                             // prefix + reverse(mid) + end
                             val newTour = prefix ++ mid.reverse ++ end
+                            var bestDist = pathLength(tour).getOrElse(0L)
 
                             // dist = graph.pathLength(newTour)
-                            var dist = pathLength(newTour.map(vertex => vertex)).get
+                            var dist: Long = pathLength(newTour).getOrElse(0L) 
 
-                            // if dist < bestDist then
-                            if (dist < bestDist.get) {
+                            if (dist < bestDist) {
                                 tour = newTour
-                                bestDist = Some(dist)
+                                bestDist = dist
+                                improving = true
                             }
 
                         }
@@ -658,7 +671,16 @@ object graph
                 tour = tour :+ tour.head
 
                 // return seq of edges
-                tour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(Int.MaxValue))).toSeq
+                // do not add negative weight edges to the tour
+                
+                for (i <- 0 until tour.size - 1 if getEdgeWeight(tour(i), tour(i + 1)).isDefined) yield {
+                    
+                    val edge = new Edge[T](tour(i), tour(i + 1), getEdgeWeight(tour(i), tour(i + 1)).getOrElse(0))
+                    (edge)
+
+                }
+    
+
             }
 
 
