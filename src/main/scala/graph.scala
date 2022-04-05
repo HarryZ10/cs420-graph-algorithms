@@ -52,6 +52,12 @@ object graph
         
         def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]]
 
+        def geneticTSP(popSize:Int, inversionProb:Float, maxIters:Int):Seq[Edge[T]]
+
+        // def geneticTSP:Seq[Edge[T]]
+
+        // def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]]
+
         override def toString:String
     }
 
@@ -656,6 +662,85 @@ object graph
             }
 
 
+            def geneticTSP(popSize:Int, inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
+                
+                // pop = a random collection of tours of size
+                var pop: Seq[Seq[T]] = (1 to popSize).map(i => vertices.toSeq)
+
+                var repeat: Boolean = false
+
+                var startCity: T = 0.asInstanceOf[T]
+                var endCity: T = 0.asInstanceOf[T]
+
+                // for a fixed number of iterations do
+                for (i <- 1 to maxIters) {
+
+                    // for tour in pop do
+                    for (tour <- pop) {
+                        // newTour = copy(tour)
+                        var newTour = tour
+                        // startCity = randomCity(newT our)
+                        startCity = newTour(Random.nextInt(newTour.size))
+                        // repeat = True
+                        repeat = true
+
+                        while (repeat) {
+                            // if random() ≤ p then
+                            if (Random.nextFloat() <= inversionProb) {
+                                // endCity = randomCity(newT our \ startCity)
+                                endCity = newTour.filter(vertex => vertex != startCity)(Random.nextInt(newTour.size - 1))
+                            }
+                            else {
+                                // otherT our = randomTour(pop \ tour)
+                                val otherTour = pop.filter(tour => tour != newTour)(Random.nextInt(pop.size - 1))
+
+                                // endCity = city next to startCity in otherTour
+                                endCity = otherTour.filter(vertex => vertex != startCity)(Random.nextInt(otherTour.size - 1))
+                            }
+
+
+                            // if startCity is adjacent to endCity in newTour then repeat = False
+                            if (getAdjacent(startCity).toSeq.contains(endCity)) {
+                                repeat = false
+                            }
+                            else {
+                                
+                                // reverse section from startCity to endCity in newTour
+                                val startIndex = newTour.indexOf(startCity)
+
+                                val endIndex = newTour.indexOf(endCity)
+
+                                val startSection = newTour.slice(startIndex, endIndex)
+
+                                val endSection = newTour.slice(endIndex, newTour.size)
+
+                                newTour = newTour.slice(0, startIndex) ++ startSection.reverse ++ endSection
+
+                                startCity = endCity
+                            }
+                        }
+
+                        //if tourLength(newT our) < tourLength(tour) then replace tour with newTour in pop
+                        if (pathLength(newTour.map(vertex => vertex)).get < pathLength(tour.map(vertex => vertex)).get) {
+                            
+                            // replace tour with newTour in pop
+                            pop = pop.filter(tour => tour != newTour) :+ newTour
+                        }
+                    }
+                }
+
+                // return the shortest tour in pop
+                val bestTour = pop.minBy(tour => pathLength(tour.map(vertex => vertex)).get)
+
+                // return seq of edges
+                bestTour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(Int.MaxValue))).toSeq
+            }
+
+            // def geneticTSP:Seq[Edge[T]]
+
+            // def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]]
+
+
             /**
              * Returns a string representation of the graph
              *
@@ -681,29 +766,8 @@ object graph
 
     def main(args: Array[String])
     {
-        var nonTrivialGraph = Graph[String](false)
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv");
 
-        nonTrivialGraph = nonTrivialGraph.addVertex("A")
-        nonTrivialGraph = nonTrivialGraph.addVertex("B")
-        nonTrivialGraph = nonTrivialGraph.addVertex("C")
-        nonTrivialGraph = nonTrivialGraph.addVertex("D")
-        nonTrivialGraph = nonTrivialGraph.addVertex("E")
-        
-
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 20)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 50)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 10)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "E", 90)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 40)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 10)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 15)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "C", 50)
-        nonTrivialGraph = nonTrivialGraph.addEdge("C", "E", 30)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 70)
-
-        // print minimum spanning tree
-        println("Greedy TSP:")
-        println(nonTrivialGraph.greedyTSP)
+        println(undirectedGraph.geneticTSP(100, 0.5f, 100));
     }
 }
