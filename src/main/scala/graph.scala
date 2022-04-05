@@ -693,7 +693,7 @@ object graph
             }
 
             def geneticTSP:Seq[Edge[T]] = {
-                geneticTSP(10, 0.5f, 100)
+                geneticTSP(90, 0.5f, 100)
             }
 
             def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
@@ -825,31 +825,11 @@ object graph
 
     def main(args: Array[String])
     {
-        var nonTrivialGraph = Graph[String](false)
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
+        // var nonTrivialGraph = Graph[String](false)
+        var undirectedGraph1 = Graph.fromCSVFile(false, "src/main/Example.csv")
+        var undirectedGraph2 = Graph.fromCSVFile(false, "src/main/Example2.csv")
 
-        nonTrivialGraph = nonTrivialGraph.addVertex("A")
-        nonTrivialGraph = nonTrivialGraph.addVertex("B")
-        nonTrivialGraph = nonTrivialGraph.addVertex("C")
-        nonTrivialGraph = nonTrivialGraph.addVertex("D")
-        nonTrivialGraph = nonTrivialGraph.addVertex("E")
-        
-
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 20)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 50)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 10)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "E", 90)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 40)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 10)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 15)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "C", 50)
-        nonTrivialGraph = nonTrivialGraph.addEdge("C", "E", 30)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 70)
-
-        // print minimum spanning tree
-        println("Greedy TSP:")
-        println(nonTrivialGraph.greedyTSP)
-        println(nonTrivialGraph.geneticTSP)
+        println(undirectedGraph1.geneticTSP(101, 0.28f, 200))
         
 
     }
