@@ -55,9 +55,9 @@ object graph
 
         def geneticTSP(popSize:Int, inversionProb:Float, maxIters:Int):Seq[Edge[T]]
 
-        // def geneticTSP:Seq[Edge[T]]
+        def geneticTSP:Seq[Edge[T]]
 
-        // def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]]
+        def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]]
 
         override def toString:String
     }
@@ -686,8 +686,20 @@ object graph
 
             def geneticTSP(popSize:Int, inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
                 
+                // pop = a random collection of tours of popSize
+                var pop: Seq[Seq[T]] = (1 to popSize).map(i => Random.shuffle(vertices.toSeq))
+
+                geneticTSP(pop, inversionProb, maxIters)
+            }
+
+            def geneticTSP:Seq[Edge[T]] = {
+                geneticTSP(10, 0.5f, 100)
+            }
+
+            def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
+                
                 // pop = a random collection of tours of size
-                var pop: Seq[Seq[T]] = Random.shuffle(vertices.toSeq).sliding(vertices.length, vertices.length).toSeq
+                var pop: Seq[Seq[T]] = initPop
 
                 var repeat: Boolean = false
 
@@ -775,13 +787,8 @@ object graph
                     
                     val edge = new Edge[T](bestTour(i), bestTour(i + 1), getEdgeWeight(bestTour(i), bestTour(i + 1)).getOrElse(0))
                     (edge)
-
                 }
             }
-
-            // def geneticTSP:Seq[Edge[T]]
-
-            // def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]]
 
 
             def randomTour(pop:Seq[Seq[T]]): Seq[T] = {
@@ -842,7 +849,7 @@ object graph
         // print minimum spanning tree
         println("Greedy TSP:")
         println(nonTrivialGraph.greedyTSP)
-        println(nonTrivialGraph.geneticTSP(10, 0.5f, 100))
+        println(nonTrivialGraph.geneticTSP)
         
 
     }
