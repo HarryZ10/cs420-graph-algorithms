@@ -258,7 +258,17 @@ object graph
             def getEdgeWeight(source:T, destination:T):Option[Int] = {
                 
                 // count each edge once even if it's undirected
-                val edge = edges.find(e => e._1 == source && e._2 == destination)
+                var edge = edges.find(e => e._1 == source && e._2 == destination)
+
+                // if graph is undirected
+                if (!isDirected)
+                {
+                    // if edge doesn't exist, check if it's a reverse edge
+                    if (edge == None)
+                    {
+                        edge = edges.find(e => e._1 == destination && e._2 == source)
+                    }
+                }
 
                 // if edge exists, return it
                 if (edge != None)
@@ -701,7 +711,7 @@ object graph
                 // pop = a random collection of tours of size
                 var pop: Seq[Seq[T]] = initPop
 
-                var repeat: Boolean = false
+                var repeat: Boolean = true
 
                 var startCity: T = 0.asInstanceOf[T]
                 var endCity: T = 0.asInstanceOf[T]
@@ -715,8 +725,6 @@ object graph
                         var newTour = tour
                         // startCity = randomCity(newT our)
                         startCity = newTour(Random.nextInt(newTour.size))
-                        // repeat = True
-                        repeat = true
 
                         while (repeat) {
                             // if random() ≤ p then
@@ -831,32 +839,24 @@ object graph
     {
         // var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph1 = Graph.fromCSVFile(false, "src/main/Example.csv")
-        // var undirectedGraph2 = Graph.fromCSVFile(false, "src/main/Example2.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
 
-        // println(undirectedGraph1.geneticTSP(101, 0.28f, 200))
-        var nonTrivialGraph = Graph[String](false)
+        var path = undirectedGraph.geneticTSP(100, 0.2f, 1000)
+        var pathLength = path.map(edge => edge.weight).sum
+
+        println(pathLength)
+        println(path)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
 
-        nonTrivialGraph = nonTrivialGraph.addVertex("A")
-        nonTrivialGraph = nonTrivialGraph.addVertex("B")
-        nonTrivialGraph = nonTrivialGraph.addVertex("C")
-        nonTrivialGraph = nonTrivialGraph.addVertex("D")
-        nonTrivialGraph = nonTrivialGraph.addVertex("E")
-        
+        // var shuffle = Random.shuffle(undirectedGraph.getVertices.toSeq)
+        // println("shuffle: " + shuffle)
+        // var head = shuffle.head
+        // println("Head: " + head)
+        // var both = shuffle ++ Seq(head)
+        // println("both: " + both)
+        // var pathLength = undirectedGraph.pathLength(both)
 
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 20)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 50)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 10)
-        nonTrivialGraph = nonTrivialGraph.addEdge("A", "E", 90)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 40)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 10)
-        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 15)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "C", 50)
-        nonTrivialGraph = nonTrivialGraph.addEdge("C", "E", 30)
-        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 70)
-
-        println(nonTrivialGraph.geneticTSP(5, 0.5f, 200))
-        println(nonTrivialGraph.greedyTSP)
+        // println(pathLength)
 
     }
 }
