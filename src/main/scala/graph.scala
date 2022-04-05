@@ -722,11 +722,15 @@ object graph
                             // if random() ≤ p then
                             if (Random.nextFloat() <= inversionProb) {
                                 // endCity = randomCity(newT our \ startCity)
-                                endCity = newTour.filter(vertex => vertex != startCity)(Random.nextInt(newTour.size - 1))
+                                if (newTour.size > 2) {
+                                    endCity = newTour.filter(vertex => vertex != startCity)(Random.nextInt(newTour.size - 1))
+                                }
+                                else {
+                                    endCity = newTour(Random.nextInt(newTour.size))
+                                }
                             }
                             else {
                                 // otherTour = randomTour(pop \ tour)
-                                // bound must be positive
                                 val otherTour = randomTour(pop.filter(tour => tour != newTour))
 
                                 // endCity = city next to startCity in otherTour
