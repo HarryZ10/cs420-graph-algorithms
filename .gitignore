@@ -5,5 +5,11 @@ target
 .vscode/
 .metals/
 .bsp/
+.bsp/*.json
+.bsp/*.json.meta
 .bloop/
 .bloop/graph/graph-analysis.bin
+.bloop/*.bin
+.bloop/bin/
+.bloop/graph/*
+.bloop/graph/*.json
