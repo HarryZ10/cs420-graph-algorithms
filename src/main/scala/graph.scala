@@ -826,11 +826,32 @@ object graph
     def main(args: Array[String])
     {
         // var nonTrivialGraph = Graph[String](false)
-        var undirectedGraph1 = Graph.fromCSVFile(false, "src/main/Example.csv")
-        var undirectedGraph2 = Graph.fromCSVFile(false, "src/main/Example2.csv")
+        // var undirectedGraph1 = Graph.fromCSVFile(false, "src/main/Example.csv")
+        // var undirectedGraph2 = Graph.fromCSVFile(false, "src/main/Example2.csv")
 
-        println(undirectedGraph1.geneticTSP(101, 0.28f, 200))
+        // println(undirectedGraph1.geneticTSP(101, 0.28f, 200))
+        var nonTrivialGraph = Graph[String](false)
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
+
+        nonTrivialGraph = nonTrivialGraph.addVertex("A")
+        nonTrivialGraph = nonTrivialGraph.addVertex("B")
+        nonTrivialGraph = nonTrivialGraph.addVertex("C")
+        nonTrivialGraph = nonTrivialGraph.addVertex("D")
+        nonTrivialGraph = nonTrivialGraph.addVertex("E")
         
+
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 20)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 50)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 10)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "E", 90)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 40)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 10)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 15)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "C", 50)
+        nonTrivialGraph = nonTrivialGraph.addEdge("C", "E", 30)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 70)
+
+        println(nonTrivialGraph.geneticTSP(5, 0.5f, 200))
 
     }
 }
