@@ -852,6 +852,7 @@ object graph
         nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 70)
 
         println(nonTrivialGraph.geneticTSP(5, 0.5f, 200))
+        println(nonTrivialGraph.greedyTSP)
 
     }
 }
