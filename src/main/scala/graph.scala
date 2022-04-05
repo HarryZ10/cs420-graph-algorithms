@@ -507,7 +507,7 @@ object graph
 
                     // check if edge exists then add weight to length
                     // otherwise there is no path thus return None
-                    if (edgeExists(source, destination))
+                    if (edgeExists(source, destination) && getEdgeWeight(source, destination).isDefined)
                         length += getEdgeWeight(source, destination).get
                     else {
                         notAPath = true;
@@ -687,7 +687,7 @@ object graph
             def geneticTSP(popSize:Int, inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
                 
                 // pop = a random collection of tours of size
-                var pop: Seq[Seq[T]] = (1 to popSize).map(i => vertices.toSeq)
+                var pop: Seq[Seq[T]] = Random.shuffle(vertices.toSeq).sliding(vertices.length, vertices.length).toSeq
 
                 var repeat: Boolean = false
 
@@ -713,17 +713,20 @@ object graph
                                 endCity = newTour.filter(vertex => vertex != startCity)(Random.nextInt(newTour.size - 1))
                             }
                             else {
-                                // otherT our = randomTour(pop \ tour)
-                                val otherTour = pop.filter(tour => tour != newTour)(Random.nextInt(pop.size - 1))
+                                // otherTour = randomTour(pop \ tour)
+                                // bound must be positive
+                                val otherTour = randomTour(pop.filter(tour => tour != newTour))
 
                                 // endCity = city next to startCity in otherTour
-                                endCity = otherTour.filter(vertex => vertex != startCity)(Random.nextInt(otherTour.size - 1))
+                                if (otherTour.indexOf(startCity) + 1 < otherTour.size) {
+                                    endCity = otherTour(otherTour.indexOf(startCity) + 1)
+                                }
                             }
 
-
-                            // if startCity is adjacent to endCity in newTour then repeat = False
-                            if (getAdjacent(startCity).toSeq.contains(endCity)) {
-                                repeat = false
+                            if (startCity != 0.asInstanceOf[T] && endCity != 0.asInstanceOf[T]) {
+                                if (getAdjacent(startCity).toSeq.contains(endCity)) {
+                                    repeat = false
+                                }
                             }
                             else {
                                 
@@ -743,7 +746,9 @@ object graph
                         }
 
                         //if tourLength(newT our) < tourLength(tour) then replace tour with newTour in pop
-                        if (pathLength(newTour.map(vertex => vertex)).get < pathLength(tour.map(vertex => vertex)).get) {
+                        if (pathLength(newTour.map(vertex => vertex)).isDefined
+                            && pathLength(tour.map(vertex => vertex)).isDefined
+                            && pathLength(newTour.map(vertex => vertex)).get < pathLength(tour.map(vertex => vertex)).get) {
                             
                             // replace tour with newTour in pop
                             pop = pop.filter(tour => tour != newTour) :+ newTour
@@ -752,16 +757,41 @@ object graph
                 }
 
                 // return the shortest tour in pop
-                val bestTour = pop.minBy(tour => pathLength(tour.map(vertex => vertex)).get)
+                var bestTour = pop.head
 
-                // return seq of edges
-                bestTour.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).getOrElse(Int.MaxValue))).toSeq
+                for (tour <- pop) {
+                    if (pathLength(tour.map(vertex => vertex)).isDefined) {
+                        if (pathLength(tour.map(vertex => vertex)).get < pathLength(bestTour.map(vertex => vertex)).get) {
+                            bestTour = pop.minBy(tour => pathLength(tour.map(vertex => vertex)).get)
+                        }
+                    }
+                }
+
+
+                // append the start city to the end of the tour
+                bestTour = bestTour :+ bestTour.head
+                
+                for (i <- 0 until bestTour.size - 1 if getEdgeWeight(bestTour(i), bestTour(i + 1)).isDefined) yield {
+                    
+                    val edge = new Edge[T](bestTour(i), bestTour(i + 1), getEdgeWeight(bestTour(i), bestTour(i + 1)).getOrElse(0))
+                    (edge)
+
+                }
             }
 
             // def geneticTSP:Seq[Edge[T]]
 
             // def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]]
 
+
+            def randomTour(pop:Seq[Seq[T]]): Seq[T] = {
+                // return a random tour from the collection of tours
+                if (pop.size > 0) {
+                    pop(Random.nextInt(pop.size))
+                } else {
+                    Seq()
+                }
+            }
 
             /**
              * Returns a string representation of the graph
@@ -788,8 +818,32 @@ object graph
 
     def main(args: Array[String])
     {
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv");
+        var nonTrivialGraph = Graph[String](false)
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
 
-        println(undirectedGraph.geneticTSP(100, 0.5f, 100));
+        nonTrivialGraph = nonTrivialGraph.addVertex("A")
+        nonTrivialGraph = nonTrivialGraph.addVertex("B")
+        nonTrivialGraph = nonTrivialGraph.addVertex("C")
+        nonTrivialGraph = nonTrivialGraph.addVertex("D")
+        nonTrivialGraph = nonTrivialGraph.addVertex("E")
+        
+
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "B", 20)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "C", 50)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "D", 10)
+        nonTrivialGraph = nonTrivialGraph.addEdge("A", "E", 90)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "C", 40)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "D", 10)
+        nonTrivialGraph = nonTrivialGraph.addEdge("B", "E", 15)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "C", 50)
+        nonTrivialGraph = nonTrivialGraph.addEdge("C", "E", 30)
+        nonTrivialGraph = nonTrivialGraph.addEdge("D", "E", 70)
+
+        // print minimum spanning tree
+        println("Greedy TSP:")
+        println(nonTrivialGraph.greedyTSP)
+        println(nonTrivialGraph.geneticTSP(10, 0.5f, 100))
+        
+
     }
 }
