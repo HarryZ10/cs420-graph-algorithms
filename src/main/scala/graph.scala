@@ -711,10 +711,7 @@ object graph
                             // if random() ≤ p then
                             if (Random.nextFloat() <= inversionProb) {
                                 // endCity = randomCity(newTour \ startCity)
-                
-                                // endCity = newTour.filter(vertex => vertex != startCity)(Random.nextInt(newTour.size - 1))
                                 var temp = newTour.filter(vertex => vertex != startCity)
-
                                 endCity = temp(Random.nextInt(temp.size))
                             
                             }
@@ -723,7 +720,6 @@ object graph
                                 val otherTour = randomTour(pop.filter(tour => tour != newTour))
 
                                 // endCity = city next to startCity in otherTour
-                                // endCity = otherTour.filter(vertex => vertex != startCity)(Random.nextInt(otherTour.size - 1))
                                 var temp2 = otherTour.filter(vertex => vertex != startCity)
                                 endCity = temp2(Random.nextInt(otherTour.size - 1))
                             }
@@ -774,7 +770,7 @@ object graph
                 
                 for (i <- 0 until bestTour.size - 1 if getEdgeWeight(bestTour(i), bestTour(i + 1)).isDefined) yield {
                     
-                    val edge = new Edge[T](bestTour(i), bestTour(i + 1), getEdgeWeight(bestTour(i), bestTour(i + 1)).getOrElse(0))
+                    val edge = new Edge[T](bestTour(i), bestTour(i + 1), getEdgeWeight(bestTour(i), bestTour(i + 1)).get)
                     (edge)
                 }
             }
@@ -819,7 +815,7 @@ object graph
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
 
-        var path = undirectedGraph.geneticTSP(100, 0.2f, 1000)
+        var path = undirectedGraph.geneticTSP(1000, 0.26f, 10000)
         var length = undirectedGraph.pathLength(path.map(edge => edge.source))
         // var length = undirectedGraph.pathLength(path.map(edge => edge.source).toSeq)
         
