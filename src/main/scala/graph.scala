@@ -260,6 +260,12 @@ object graph
                 // count each edge once even if it's undirected
                 var edge = edges.find(e => e._1 == source && e._2 == destination)
 
+                if (!isDirected) {
+                    // if the edge is not found, check if it's a reverse edge
+                    if (edge == None)
+                        edge = edges.find(e => e._1 == destination && e._2 == source)
+                }
+
                 // if edge exists, return it
                 if (edge.isDefined)
                     Some(edge.get._3)
@@ -713,7 +719,6 @@ object graph
                                 // endCity = randomCity(newTour \ startCity)
                                 var temp = newTour.filter(vertex => vertex != startCity)
                                 endCity = temp(Random.nextInt(temp.size))
-                            
                             }
                             else {
                                 // otherTour = randomTour(pop \ tour)
@@ -764,6 +769,7 @@ object graph
                     }
                 }
 
+                println("Best tour: " + bestTour)
 
                 // append the start city to the end of the tour
                 bestTour = bestTour :+ bestTour.head
@@ -815,7 +821,7 @@ object graph
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
 
-        var path = undirectedGraph.geneticTSP(1000, 0.26f, 100)
+        var path = undirectedGraph.geneticTSP(100, 0.2f, 1000)
         var length = undirectedGraph.pathLength(path.map(edge => edge.source))
         // var length = undirectedGraph.pathLength(path.map(edge => edge.source).toSeq)
         
