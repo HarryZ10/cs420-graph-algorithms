@@ -720,42 +720,25 @@ object graph
                         // for k in hist
                         for (k <- hist) {
 
-                            // find the vertex x that minimizes the following expression. The result is the distance, i.e. a∈hist
-                            // number, to x from depot given hist.
-
                             var minDist = Int.MaxValue
                             
                             // x∈hist\k for all x∈hist
                             for (x <- hist if x != k) {
 
-                                // dist(hist, k) = min(dist(hist, k), dist(hist, x) + edgeWeight(x, k))
-                                // hist is immutable, so we need to create a new one
                                 var newHist: Set[T] = hist - k
-                            
-                                try {
+
+                                // if key exists
+                                if (dist.contains(newHist) && dist(newHist).contains(x)) {
                                     var newDist = dist(newHist)(x) + getEdgeWeight(x, k).getOrElse(Int.MaxValue)
+                                
                                     if (newDist < minDist) {
                                         minDist = newDist
                                         minVertex = x
                                         
                                     }
-                                } catch {
-                                    case e: NoSuchElementException => {
-                                        // do nothing
-                                    }
+                                    
+                                    dist += (hist -> Map(k -> minDist))
                                 }
-                                
-                                dist += (hist -> Map(k -> minDist))
-
-                                // // if dist(hist, k) < minDist
-                                // if (dist(newHist)(k) < minDist) {
-
-                                //     // minDist = dist(hist, k)
-                                //     minDist = dist(newHist)(k)
-
-                                //     // minVertex = x
-                                //     minVertex = x
-                                // }
                             }
 
                             // parent(hist, k) = x
@@ -771,8 +754,8 @@ object graph
                 // for x in ends
                 for (x <- ends) {
 
-                    try {
-                        // if dist(ends, x) + graph.edgeWeight(x, depot) < opt
+                    if (dist.contains(ends) && dist(ends).contains(x)) {
+                        
                         if (dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue) < opt) {
 
                             // opt = dist(ends, x) + graph.edgeWeight(x, depot)
@@ -782,24 +765,22 @@ object graph
                             var optVertex = x
                         }
                     }
-                    catch {
-                        case e: NoSuchElementException => {
-                            // do nothing
-                        }
-                    }
                 }
 
                 // return seq of edges
                 var tour = Seq[Edge[T]]()
 
-                // while optVertex ≠ depot
+                // rewind the tour of parent and opt
                 while (optVertex != depot) {
 
-                    // tour = tour + (parent(ends, optVertex), optVertex)
-                    tour = tour :+ new Edge[T](parent(ends)(optVertex), optVertex, getEdgeWeight(optVertex, parent(ends)(optVertex)).get)
+                    if (parent.contains(ends) && parent(ends).contains(optVertex)) {
 
-                    // optVertex = parent(ends, optVertex)
-                    optVertex = parent(ends)(optVertex)
+                        tour = tour :+ new Edge[T](parent(ends)(optVertex), optVertex, getEdgeWeight(optVertex, parent(ends)(optVertex)).get)
+
+                        // optVertex = parent(ends, optVertex)
+                        optVertex = parent(ends)(optVertex)
+                    }
+                    
                 }
 
                 // tour = tour + (depot, optVertex)
