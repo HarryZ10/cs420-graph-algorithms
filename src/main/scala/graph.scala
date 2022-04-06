@@ -726,7 +726,13 @@ object graph
 
                                 // endCity = city next to startCity in otherTour
                                 var temp2 = otherTour.filter(vertex => vertex != startCity)
-                                endCity = temp2(Random.nextInt(otherTour.size - 1))
+
+                                if (temp2.size > 0) {
+                                    endCity = temp2(Random.nextInt(temp2.size))
+                                } else {
+                                    endCity = otherTour(Random.nextInt(otherTour.size))
+                                }
+                                // endCity = temp2(Random.nextInt(otherTour.size))
                             }
 
                             if (getAdjacent(startCity).toSeq.contains(endCity)) {
@@ -768,8 +774,6 @@ object graph
                         }
                     }
                 }
-
-                println("Best tour: " + bestTour)
 
                 // append the start city to the end of the tour
                 bestTour = bestTour :+ bestTour.head
