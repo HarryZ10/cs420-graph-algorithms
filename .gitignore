@@ -2,3 +2,4 @@ project/target
 target
 .vscode/
 .metals/
+.bsp/
