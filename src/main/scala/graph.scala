@@ -815,7 +815,7 @@ object graph
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
         var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
 
-        var path = undirectedGraph.geneticTSP(1000, 0.26f, 10000)
+        var path = undirectedGraph.geneticTSP(1000, 0.26f, 100)
         var length = undirectedGraph.pathLength(path.map(edge => edge.source))
         // var length = undirectedGraph.pathLength(path.map(edge => edge.source).toSeq)
         
