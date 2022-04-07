@@ -702,7 +702,7 @@ object graph
                     for (tour <- pop if tour.size > 2) {
 
                         // newTour = copy(tour)
-                        var newTour = tour
+                        var newTour: Vector[T] = tour.toVector
                         
                         // startCity = randomCity(newTour)
                         startCity = newTour(Random.nextInt(newTour.size))
@@ -725,7 +725,7 @@ object graph
                                 var tempPop = pop.filterNot(tempTour => tempTour == tour)
 
                                 // pick a random tour from the remaining tours
-                                var otherTour = tempPop(Random.nextInt(tempPop.size))
+                                var otherTour: Vector[T] = tempPop(Random.nextInt(tempPop.size)).toVector
 
                                 // endCity = city next to startCity in otherTour
                                 // for startCity we look up which city is adjacent to it in otherTour
@@ -762,12 +762,12 @@ object graph
                 }
 
                 // return the shortest tour in pop
-                var bestTour = pop.head
+                var bestTour = pop.head.toVector
 
                 for (tour <- pop) {
                     if (pathLength(tour.map(vertex => vertex)).isDefined && pathLength(bestTour.map(vertex => vertex)).isDefined) {
                         if (pathLength(tour.map(vertex => vertex)).get < pathLength(bestTour.map(vertex => vertex)).get) {
-                            bestTour = pop.minBy(tour => pathLength(tour.map(vertex => vertex)).get)
+                            bestTour = pop.minBy(tour => pathLength(tour.map(vertex => vertex)).get).toVector
                         }
                     }
                 }
