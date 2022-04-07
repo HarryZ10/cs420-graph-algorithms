@@ -13,3 +13,4 @@ target
 .bloop/bin/
 .bloop/graph/*
 .bloop/graph/*.json
+.idea/
