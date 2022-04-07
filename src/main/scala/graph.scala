@@ -500,21 +500,17 @@ object graph
             def pathLength(path: Seq[T]): Option[Long] = {
                 
                 var length = 0L
-                var i = 0
                 var notAPath: Boolean = false;
                 var returnLength: Option[Long] = Option.empty[Long]
 
                 path.sliding(2).foreach(pair => {
-                    if (pair.size == 2 && getEdgeWeight(pair(0), pair(1)).isDefined) {
+                    if (getEdgeWeight(pair(0), pair(1)).isDefined) {
                         length += getEdgeWeight(pair(0), pair(1)).get
-                    } else {
-                        notAPath = true
-                    }
+
+                    } else notAPath = true
                 })
 
-                if (!notAPath) {
-                    returnLength = Try(length).toOption
-                }
+                if (!notAPath) returnLength = Try(length).toOption
 
                 returnLength
             }
@@ -703,7 +699,7 @@ object graph
                 for (i <- 1 to maxIters) {
 
                     // for tour in pop do
-                    for (tour <- pop) {
+                    for (tour <- pop if tour.size > 2) {
 
                         // newTour = copy(tour)
                         var newTour = tour
@@ -717,37 +713,38 @@ object graph
                             // if random() ≤ p then
                             if (Random.nextFloat() <= inversionProb) {
                                 // endCity = randomCity(newTour \ startCity)
-                                var temp = newTour.filter(vertex => vertex != startCity)
-                                endCity = temp(Random.nextInt(temp.size))
+                                // temporarily remove the startCity from the tour
+                                var tempTour = newTour.filterNot(city => city == startCity)
+
+                                // pick a random city from the remaining cities
+                                endCity = tempTour(Random.nextInt(tempTour.size))
                             }
                             else {
                                 // otherTour = randomTour(pop \ tour)
-                                val otherTour = randomTour(pop.filter(tour => tour != newTour))
+                                // temporarily remove the tour from the population (pop)
+                                var tempPop = pop.filterNot(tempTour => tempTour == tour)
+
+                                // pick a random tour from the remaining tours
+                                var otherTour = tempPop(Random.nextInt(tempPop.size))
 
                                 // endCity = city next to startCity in otherTour
-                                var temp2 = otherTour.filter(vertex => vertex != startCity)
-
-                                if (temp2.size > 0) {
-                                    endCity = temp2(Random.nextInt(temp2.size))
-                                } else {
-                                    endCity = otherTour(Random.nextInt(otherTour.size))
-                                }
-                                // endCity = temp2(Random.nextInt(otherTour.size))
+                                // for startCity we look up which city is adjacent to it in otherTour
+                                var tempOtherTour = otherTour.filterNot(city => city == startCity)
+                                endCity = tempOtherTour(Random.nextInt(tempOtherTour.size))
                             }
 
+                            // if startCity is adjacent to endCity in newTour then
+                            // if they're already next to each other, then we're done
                             if (getAdjacent(startCity).toSeq.contains(endCity)) {
                                 repeat = false
                             }
                             else {
-                                
-                                // reverse section from startCity to endCity in newTour
-                                val startIndex = newTour.indexOf(startCity)
-                                val endIndex = newTour.indexOf(endCity)
-
-                                val startSection = newTour.slice(startIndex, endIndex)
-                                val endSection = newTour.slice(endIndex, newTour.size)
-
-                                newTour = newTour.slice(0, startIndex) ++ startSection.reverse ++ endSection
+                                // reverse a subsection of newTour between startCity and endCity
+                                for (i <- 0 until newTour.size if newTour(i) == startCity) {
+                                    for (j <- i + 1 until newTour.size if newTour(j) == endCity) {
+                                        newTour = newTour.slice(0, i) ++ newTour.slice(i, j + 1).reverse ++ newTour.slice(j + 1, newTour.size)
+                                    }
+                                }
 
                                 startCity = endCity
                             }
@@ -822,12 +819,14 @@ object graph
     def main(args: Array[String])
     {
         // var nonTrivialGraph = Graph[String](false)
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
 
-        var path = undirectedGraph.geneticTSP(100, 0.2f, 1000)
-        var length = undirectedGraph.pathLength(path.map(edge => edge.source))
-        // var length = undirectedGraph.pathLength(path.map(edge => edge.source).toSeq)
+        var path = undirectedGraph.geneticTSP(500, 0.2f, 2)
+
+        // add the last edge to end of path
+        var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
+        var length = undirectedGraph.pathLength(onlyVerticesFromPath)
         
 
         println(path)
