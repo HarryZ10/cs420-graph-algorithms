@@ -691,7 +691,7 @@ object graph
             def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
                 
                 // pop = a random collection of tours of size
-                var pop: Seq[Seq[T]] = initPop
+                var pop: Vector[Seq[T]] = initPop.toVector
                 var startCity: T = 0.asInstanceOf[T]
                 var endCity: T = 0.asInstanceOf[T]
 
@@ -819,10 +819,10 @@ object graph
     def main(args: Array[String])
     {
         // var nonTrivialGraph = Graph[String](false)
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
-
-        var path = undirectedGraph.geneticTSP(500, 0.2f, 2)
+// 
+        var path = undirectedGraph.geneticTSP(100, 0.5f, 20000)
 
         // add the last edge to end of path
         var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
