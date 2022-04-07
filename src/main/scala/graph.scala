@@ -1,12 +1,7 @@
-import java.io.IOException
-import java.io.File
+import java.io.{File, IOException}
 import java.util.Scanner
-
-import scala.util.Random
-import scala.collection.mutable.Stack
-import scala.collection.mutable.Map
-import scala.collection.mutable.Set
-import scala.util.Try
+import scala.collection.mutable.{Map, Set}
+import scala.util.{Random, Try}
 
 object graph
 {
@@ -59,7 +54,7 @@ object graph
 
         def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]]
 
-        override def toString:String
+        def toString:String
     }
 
 
@@ -226,7 +221,7 @@ object graph
                 // get the edge from the edges list
                 val edge = edges.find(e => e._1 == source && e._2 == destination)
                 // if edge exists, return it
-                if (edge != None)
+                if (edge.isDefined)
                     Some(new Edge(edge.get._1, edge.get._2, edge.get._3))
                 else
                     None
@@ -262,7 +257,7 @@ object graph
 
                 if (!isDirected) {
                     // if the edge is not found, check if it's a reverse edge
-                    if (edge == None)
+                    if (edge.isEmpty)
                         edge = edges.find(e => e._1 == destination && e._2 == source)
                 }
 
@@ -498,12 +493,12 @@ object graph
              * or None if no path exists
              */
             def pathLength(path: Seq[T]): Option[Long] = {
-                
+
                 var length = 0L
                 var notAPath: Boolean = false;
                 var returnLength: Option[Long] = Option.empty[Long]
 
-                path.sliding(2).foreach(pair => {
+                path.toVector.sliding(2).foreach(pair => {
                     if (getEdgeWeight(pair(0), pair(1)).isDefined) {
                         length += getEdgeWeight(pair(0), pair(1)).get
 
@@ -819,9 +814,8 @@ object graph
     def main(args: Array[String])
     {
         // var nonTrivialGraph = Graph[String](false)
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
-// 
+//        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
+         var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
         var path = undirectedGraph.geneticTSP(100, 0.5f, 20000)
 
         // add the last edge to end of path
