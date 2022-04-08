@@ -499,8 +499,8 @@ object graph
                 var returnLength: Option[Long] = Option.empty[Long]
 
                 path.toVector.sliding(2).foreach(pair => {
-                    if (getEdgeWeight(pair(0), pair(1)).isDefined) {
-                        length += getEdgeWeight(pair(0), pair(1)).get
+                    if (getEdgeWeight(pair.head, pair.last).isDefined) {
+                        length += getEdgeWeight(pair.head, pair.last).get
 
                     } else notAPath = true
                 })
@@ -814,9 +814,10 @@ object graph
     def main(args: Array[String])
     {
         // var nonTrivialGraph = Graph[String](false)
-//        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-         var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
-        var path = undirectedGraph.geneticTSP(100, 0.5f, 20000)
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
+        var path = undirectedGraph.geneticTSP(5, 0.8f, 100)
 
         // add the last edge to end of path
         var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
