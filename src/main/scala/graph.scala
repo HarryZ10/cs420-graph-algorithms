@@ -1,11 +1,8 @@
-import java.io.IOException
-import java.io.File
+import java.io.{File, IOException}
 import java.util.Scanner
-import scala.util.Random
-import scala.collection.mutable.Stack
-import scala.collection.mutable.Map
-import scala.collection.mutable.Set
 import scala.util.Try
+import scala.collection.mutable.{Map, Set}
+import scala.util.{Random, Try}
 
 object graph
 {
@@ -221,7 +218,7 @@ object graph
                 // get the edge from the edges list
                 val edge = edges.find(e => e._1 == source && e._2 == destination)
                 // if edge exists, return it
-                if (edge != None)
+                if (edge.isDefined)
                     Some(new Edge(edge.get._1, edge.get._2, edge.get._3))
                 else
                     None
@@ -253,13 +250,20 @@ object graph
             def getEdgeWeight(source:T, destination:T):Option[Int] = {
                 
                 // count each edge once even if it's undirected
-                val edge = edges.find(e => e._1 == source && e._2 == destination)
+                var edge = edges.find(e => e._1 == source && e._2 == destination)
+
+                if (!isDirected) {
+                    // if the edge is not found, check if it's a reverse edge
+                    if (edge.isEmpty)
+                        edge = edges.find(e => e._1 == destination && e._2 == source)
+                }
 
                 // if edge exists, return it
-                if (edge != None)
+                if (edge.isDefined)
                     Some(edge.get._3)
-                else
+                else {
                     None
+                }
             }
 
 
@@ -487,35 +491,19 @@ object graph
              */
             def pathLength(path: Seq[T]): Option[Long] = {
 
-                if (path.size < 2) return None
-                
                 var length = 0L
-                var i = 0
                 var notAPath: Boolean = false;
                 var returnLength: Option[Long] = Option.empty[Long]
 
-                while (i < path.size - 1)
-                {
-                    // get source and destination vertices
-                    val source = path(i)
-                    val destination = path(i + 1)
+                path.toVector.sliding(2).foreach(pair => {
+                    if (getEdgeWeight(pair.head, pair.last).isDefined) {
+                        length += getEdgeWeight(pair.head, pair.last).get
 
-                    // check if edge exists then add weight to length
-                    // otherwise there is no path thus return None
-                    if (edgeExists(source, destination))
-                        length += getEdgeWeight(source, destination).get
-                    else {
-                        notAPath = true;
-                    }
+                    } else notAPath = true
+                })
 
-                    // keep going until we reach the end of the path
-                    i += 1
-                }
+                if (!notAPath) returnLength = Try(length).toOption
 
-                if (!notAPath) {
-                    returnLength = Try(length).toOption
-                }
-                
                 returnLength
             }
 
@@ -696,19 +684,28 @@ object graph
                 var parent = Map[Set[T], Map[T, T]]()
 
                 // List ends = graph.vertices \ depot
+                // Vector of ends of vertices without the depot
                 var ends: Set[T] = Set[T]()
-                ends = ends ++ Set(vertices.tail: _*)
-                var minVertex = ends.head
 
+                // for each vertex in ends do
+                for (vertex <- vertices.tail) {
+                    // ends.push(vertex)
+                    ends += vertex
+                }
+
+                // remove the depot from ends
+                ends -= depot
 
                 // BASE CASE CLEARED!
                 for (k <- ends) {
 
                     // dist ({k},k) = edgeWeight(depot, k)
-                    dist += (Set(k) -> Map(k -> getEdgeWeight(depot, k).getOrElse(Int.MaxValue)))
+                    // put edgeWeight of depot and k in dist at key k and value
+                    dist(Set(k)) = Map(k -> getEdgeWeight(depot, k).getOrElse(0))
 
                     // parent ({k},k) = depot
-                    parent += (Set(k) -> Map(k -> depot))
+                    // put depot in parent at key k and value
+                    parent(Set(k)) = Map(k -> depot)
                 }
 
                 // RECURSIVE CASE
@@ -720,75 +717,66 @@ object graph
                         // for k in hist
                         for (k <- hist) {
 
-                            var minDist = Int.MaxValue
+                            var saveX = 0.asInstanceOf[T]
                             
                             // x∈hist\k for all x∈hist
                             for (x <- hist if x != k) {
 
-                                var newHist: Set[T] = hist - k
-
-                                // if key exists
-                                if (dist.contains(newHist) && dist(newHist).contains(x)) {
-                                    var newDist = dist(newHist)(x) + getEdgeWeight(x, k).getOrElse(Int.MaxValue)
+                                var newHistTemp = hist.filter(v => v != k)
+                                // dist(hist, k) = min(dist(hist \ k, x) + edgeWeight(x, k))
+                                // if x is in dist at key newHistTemp
                                 
-                                    if (newDist < minDist) {
-                                        minDist = newDist
-                                        minVertex = x
-                                        
-                                    }
-                                    
-                                    dist += (hist -> Map(k -> minDist))
+                                if (dist.contains(newHistTemp))
+                                {
+                                    dist(hist) = Map(k -> (dist(newHistTemp).getOrElse(x, 0) + getEdgeWeight(x, k).getOrElse(0)))
+                                    saveX = x
                                 }
                             }
 
                             // parent(hist, k) = x
-                            parent += (hist -> Map(k -> minVertex))
+                            parent(hist) = Map(k -> saveX)
                         }
                     }
                 }
 
-                // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot)
-                var opt = Long.MaxValue
-                var optVertex = ends.head
+                // optimum is the argmin of x in ends of dist(ends, x) + edgeWeight(x, depot)
+                var opt: T = 0.asInstanceOf[T]
 
-                // for x in ends
-                for (x <- ends) {
+                // for each x in ends
+                for (x <- ends if dist(ends).getOrElse(x, 0) + getEdgeWeight(x, depot).getOrElse(0) < dist(ends).getOrElse(opt, 0) + getEdgeWeight(opt, depot).getOrElse(0)) {
 
-                    if (dist.contains(ends) && dist(ends).contains(x)) {
-                        
-                        if (dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue) < opt) {
+                    // if dist(ends, x) + edgeWeight(x, depot) < dist(ends, optimum)
+                    if (dist(ends).getOrElse(x, 0) + getEdgeWeight(x, depot).getOrElse(0) < dist(ends).getOrElse(opt, 0)) {
 
-                            // opt = dist(ends, x) + graph.edgeWeight(x, depot)
-                            opt = dist(ends)(x) + getEdgeWeight(x, depot).getOrElse(Int.MaxValue)
-
-                            // optVertex = x
-                            var optVertex = x
-                        }
+                        // optimum = x
+                        opt = x
                     }
                 }
+
+                // path = [depot]
+                var path = Seq[T](depot)
+
+                // while optimum is not depot
+                while (opt != depot) {
+
+                    // path.push(optimum)
+                    path = opt +: path
+
+                    // optimum = parent(path, optimum)
+                    opt = parent(Set() ++ path).getOrElse(opt, 0.asInstanceOf[T])
+                }
+
+                path = depot +: path
 
                 // return seq of edges
-                var tour = Seq[Edge[T]]()
-
-                // rewind the tour of parent and opt
-                while (optVertex != depot) {
-
-                    if (parent.contains(ends) && parent(ends).contains(optVertex)) {
-
-                        tour = tour :+ new Edge[T](parent(ends)(optVertex), optVertex, getEdgeWeight(optVertex, parent(ends)(optVertex)).get)
-
-                        // optVertex = parent(ends, optVertex)
-                        optVertex = parent(ends)(optVertex)
-                    }
-                    
+                // do not add negative weight edges to the tour
+                for (i <- 0 until path.size - 1 if getEdgeWeight(path(i), path(i + 1)).isDefined) yield {
+                    val edge = new Edge[T](path(i), path(i + 1), getEdgeWeight(path(i), path(i + 1)).getOrElse(0))
+                    (edge)
                 }
-
-                // tour = tour + (depot, optVertex)
-                tour = tour :+ new Edge[T](depot, optVertex, getEdgeWeight(optVertex, depot).get)
-
-                // return tour
-                tour
             }
+
+
 
             /**
              * Returns a string representation of the graph
@@ -815,8 +803,13 @@ object graph
 
     def main(args: Array[String])
     {
-        // Example.csv is a file with the following format:
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example.csv")
+        // var nonTrivialGraph = Graph[String](false)
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
+
         println(undirectedGraph.dynamicTSP)
+        
+
     }
 }

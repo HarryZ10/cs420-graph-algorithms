@@ -3,3 +3,15 @@ target
 .vscode/
 .metals/
 .bsp/
+<<<<<<< HEAD
+=======
+.bsp/*.json
+.bsp/*.json.meta
+.bloop/
+.bloop/graph/graph-analysis.bin
+.bloop/*.bin
+.bloop/bin/
+.bloop/graph/*
+.bloop/graph/*.json
+.idea/
+>>>>>>> 2c2fe8faaa579ccc40d52f7a9afe9ecd81d3e271
