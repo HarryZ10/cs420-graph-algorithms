@@ -2,6 +2,7 @@ import java.io.{File, IOException}
 import java.util.Scanner
 import scala.util.Try
 import scala.collection.mutable.{Map, Set}
+import scala.collection.mutable.Stack
 import scala.util.{Random, Try}
 
 object graph
@@ -48,6 +49,10 @@ object graph
         def greedyTSP():Seq[Edge[T]]
         
         def greedyTSP(initialTour:Seq[T]):Seq[Edge[T]]
+
+        def branchBoundTSP:Seq[Edge[T]]
+
+        def branchBoundTSP(heur:(Graph[T], Seq[T]) => Long):Seq[Edge[T]]
 
         def dynamicTSP:Seq[Edge[T]]
 
@@ -776,6 +781,78 @@ object graph
                 }
             }
 
+            def branchBoundTSP(heur:(Graph[T], Seq[T]) => Long):Seq[Edge[T]] = {
+
+                var depot = vertices.head
+                // define empty stack (LIFO) of Seq[T]
+                var stack = Stack[Seq[T]]()
+
+                // define best path
+                var bestPath: Seq[T] = Seq[T]()
+
+                // push depot onto stack
+                stack.push(Seq(depot))
+
+                // define minCost as max infinity
+                var minCost: Long = Long.MaxValue
+
+                // while stack is not empty
+
+                while (stack.nonEmpty) {
+
+                    // current = stack.pop()
+                    var current = stack.pop()
+
+                    // if pathLength(current) + heur(graph, current) < minCost
+                    if (pathLength(current).getOrElse(0L) + heur(this, current) < minCost) {
+
+                        // if is complete tour of current
+                        if (current.size == vertices.size) {
+
+                            // bestPath = current
+                            bestPath = current
+
+                            // minCost = pathLength(current)
+                            minCost = pathLength(current).getOrElse(0L) + heur(this, current)
+                        } else {
+
+                            // if current.size() < graph.vertices.size()
+                            if (current.size < vertices.size) {
+
+                                // for vertex in graph and not in current
+                                for (vertex <- vertices if !current.contains(vertex)) {
+
+                                    // push current + vertex onto stack
+                                    stack.push(current :+ vertex)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // return bestPath
+                for (i <- 0 until bestPath.size - 1 if getEdgeWeight(bestPath(i), bestPath(i + 1)).isDefined) yield {
+                    val edge = new Edge[T](bestPath(i), bestPath(i + 1), getEdgeWeight(bestPath(i), bestPath(i + 1)).getOrElse(0))
+                    (edge)
+                }
+
+            }
+
+
+            def branchBoundTSP:Seq[Edge[T]] = {
+
+                var path = Seq[T]()
+                var depot = vertices.head
+                path = vertices.toSeq :+ depot
+
+                branchBoundTSP((graph, path) => {
+                    var cost = 0L
+                    for (i <- 0 until path.size - 1 if getEdgeWeight(path(i), path(i + 1)).isDefined) {
+                        cost += getEdgeWeight(path(i), path(i + 1)).getOrElse(0)
+                    }
+                    cost
+                })
+            }
 
 
             /**
@@ -805,10 +882,19 @@ object graph
     {
         // var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        var undirectedGraph = Graph.fromCSVFile(false , "src/main/graph5_271.csv")
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
 
-        println(undirectedGraph.dynamicTSP)
+        var path: Seq[String] = undirectedGraph.getVertices.toSeq ++ Seq(undirectedGraph.getVertices.head)
+        // reverse the middle of the path
+        // path = path.slice(0, path.size / 2) ++ path.slice(path.size / 2 + 1, path.size).reverse
+
+        // var branchbound = undirectedGraph.branchBoundTSP((undirectedGraph, path) => 0L)
+        var branchbound = undirectedGraph.branchBoundTSP
+        var length = undirectedGraph.pathLength(path)
+
+        println("Branch and Bound: " + branchbound)
+        println("Length: " + length)
         
 
     }
