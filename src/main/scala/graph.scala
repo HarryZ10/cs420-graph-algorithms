@@ -638,6 +638,7 @@ object graph
 
                             // prefix + reverse(mid) + end
                             val newTour = prefix ++ mid.reverse ++ end
+
                             var bestDist = pathLength(tour).getOrElse(0L)
 
                             // dist = graph.pathLength(newTour)
@@ -735,11 +736,13 @@ object graph
                             }
                             else {
                                 // reverse a subsection of newTour between startCity and endCity
-                                for (i <- 0 until newTour.size if newTour(i) == startCity) {
-                                    for (j <- i + 1 until newTour.size if newTour(j) == endCity) {
-                                        newTour = newTour.slice(0, i) ++ newTour.slice(i, j + 1).reverse ++ newTour.slice(j + 1, newTour.size)
-                                    }
-                                }
+                                
+                                val prefix = newTour.slice(0, newTour.indexOf(startCity))
+                                val mid = newTour.slice(newTour.indexOf(startCity), newTour.indexOf(endCity) + 1)
+                                val end = newTour.slice(newTour.indexOf(endCity) + 1, newTour.size)
+
+                                // prefix + reverse(mid) + end
+                                newTour = prefix ++ mid.reverse ++ end
 
                                 startCity = endCity
                             }
@@ -815,9 +818,9 @@ object graph
     {
         // var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
-        var path = undirectedGraph.geneticTSP(5, 0.8f, 100)
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
+        var path = undirectedGraph.geneticTSP(50, 0.2f, 1000)
 
         // add the last edge to end of path
         var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
