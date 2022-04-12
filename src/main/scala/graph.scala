@@ -839,6 +839,9 @@ object graph
                     }
                 }
 
+                // add start to end
+                bestPath = bestPath :+ depot
+
                 // return bestPath
                 for (i <- 0 until bestPath.size - 1 if getEdgeWeight(bestPath(i), bestPath(i + 1)).isDefined) yield {
                     val edge = new Edge[T](bestPath(i), bestPath(i + 1), getEdgeWeight(bestPath(i), bestPath(i + 1)).getOrElse(0))
@@ -885,8 +888,8 @@ object graph
         // reverse the middle of the path
         // path = path.slice(0, path.size / 2) ++ path.slice(path.size / 2 + 1, path.size).reverse
 
-        // var branchbound = undirectedGraph.branchBoundTSP and call heur
-        var branchbound = undirectedGraph.branchBoundTSP(undirectedGraph.heur(_,_))
+        var branchbound = undirectedGraph.branchBoundTSP
+        // var branchbound = undirectedGraph.branchBoundTSP(undirectedGraph.heur(_,_))
         var length = undirectedGraph.pathLength(path)
 
         println("Branch and Bound: " + branchbound)
