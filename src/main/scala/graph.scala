@@ -698,13 +698,7 @@ object graph
 
                 // BASE CASE CLEARED!
                 for (k <- ends) {
-
-                    // dist ({k},k) = edgeWeight(depot, k)
-                    // put edgeWeight of depot and k in dist at key k and value
                     dist(Set(k)) = Map(k -> getEdgeWeight(depot, k).getOrElse(0))
-
-                    // parent ({k},k) = depot
-                    // put depot in parent at key k and value
                     parent(Set(k)) = Map(k -> depot)
                 }
 
@@ -722,60 +716,61 @@ object graph
                             // x∈hist\k for all x∈hist
                             for (x <- hist if x != k) {
 
-                                var newHistTemp = hist.filter(v => v != k)
                                 // dist(hist, k) = min(dist(hist \ k, x) + edgeWeight(x, k))
                                 // if x is in dist at key newHistTemp
                                 
-                                if (dist.contains(newHistTemp))
-                                {
-                                    dist(hist) = Map(k -> (dist(newHistTemp).getOrElse(x, 0) + getEdgeWeight(x, k).getOrElse(0)))
-                                    saveX = x
-                                }
+                                dist += (hist ->  Map(k -> (dist(hist.filter(v => v != k)).getOrElse(x, 0) + getEdgeWeight(x, k).getOrElse(0))))
+                                saveX = x
                             }
 
-                            // parent(hist, k) = x
-                            parent(hist) = Map(k -> saveX)
+                            parent += (hist -> Map(k -> saveX))
                         }
                     }
                 }
 
                 // optimum is the argmin of x in ends of dist(ends, x) + edgeWeight(x, depot)
-                var opt: T = 0.asInstanceOf[T]
+                var opt: T = ends.minBy(x => dist(ends).getOrElse(x, 0) + getEdgeWeight(x, depot).getOrElse(0))
 
-                // for each x in ends
-                for (x <- ends if dist(ends).getOrElse(x, 0) + getEdgeWeight(x, depot).getOrElse(0) < dist(ends).getOrElse(opt, 0) + getEdgeWeight(opt, depot).getOrElse(0)) {
+                return rewind(parent, opt)
+            }
 
-                    // if dist(ends, x) + edgeWeight(x, depot) < dist(ends, optimum)
-                    if (dist(ends).getOrElse(x, 0) + getEdgeWeight(x, depot).getOrElse(0) < dist(ends).getOrElse(opt, 0)) {
 
-                        // optimum = x
-                        opt = x
+            def rewind(parent: Map[Set[T], Map[T, T]], opt: T): Seq[Edge[T]] = {
+
+                // we will use this to store the edges
+                var edges = Seq[Edge[T]]()
+
+                // we will use this to store the vertices
+                var _vertices = Seq[T]()
+
+                // we will use this to store the current vertex
+                var current = opt
+
+                // while current is not the depot
+                while (current != vertices.head) {
+
+                    // add current to the beginning of the vertices
+                    _vertices = current +: _vertices
+
+                    // if current is not in the parent map, then there is no path
+                    if (parent.contains(Set(current))) {
+                        current = parent(Set(current))(current)
                     }
                 }
 
-                // path = [depot]
-                var path = Seq[T](depot)
+                // add the depot to the beginning of the vertices
+                _vertices = vertices.head +: _vertices
 
-                // while optimum is not depot
-                while (opt != depot) {
+                // for i = 0 until len(vertices) - 1 do
+                for (i <- 0 until _vertices.length - 1) {
 
-                    // path.push(optimum)
-                    path = opt +: path
-
-                    // optimum = parent(path, optimum)
-                    opt = parent(Set() ++ path).getOrElse(opt, 0.asInstanceOf[T])
+                    // add edge from vertices(i) to vertices(i + 1) to edges
+                    edges = edges :+ new Edge[T](_vertices(i), _vertices(i + 1), getEdgeWeight(_vertices(i), _vertices(i + 1)).getOrElse(0))
                 }
 
-                path = depot +: path
-
-                // return seq of edges
-                // do not add negative weight edges to the tour
-                for (i <- 0 until path.size - 1 if getEdgeWeight(path(i), path(i + 1)).isDefined) yield {
-                    val edge = new Edge[T](path(i), path(i + 1), getEdgeWeight(path(i), path(i + 1)).getOrElse(0))
-                    (edge)
-                }
+                // return edges
+                edges
             }
-
 
 
             /**
