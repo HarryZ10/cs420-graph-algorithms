@@ -687,7 +687,7 @@ object graph
             def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
                 
                 // pop = a random collection of tours of size
-                var pop: Vector[Seq[T]] = initPop.toVector
+                var pop: Seq[Seq[T]] = initPop.toVector
                 var startCity: T = 0.asInstanceOf[T]
                 var endCity: T = 0.asInstanceOf[T]
 
@@ -698,7 +698,7 @@ object graph
                     for (tour <- pop if tour.size > 2) {
 
                         // newTour = copy(tour)
-                        var newTour: Vector[T] = tour.toVector
+                        var newTour: Seq[T] = tour.toVector
                         
                         // startCity = randomCity(newTour)
                         startCity = newTour(Random.nextInt(newTour.size))
@@ -721,7 +721,7 @@ object graph
                                 var tempPop = pop.filterNot(tempTour => tempTour == tour)
 
                                 // pick a random tour from the remaining tours
-                                var otherTour: Vector[T] = tempPop(Random.nextInt(tempPop.size)).toVector
+                                var otherTour: Seq[T] = tempPop(Random.nextInt(tempPop.size)).toVector
 
                                 // endCity = city next to startCity in otherTour
                                 // for startCity we look up which city is adjacent to it in otherTour
@@ -825,10 +825,8 @@ object graph
         // add the last edge to end of path
         var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
         var length = undirectedGraph.pathLength(onlyVerticesFromPath)
-        
 
         println(path)
         println(length)
-
     }
 }
