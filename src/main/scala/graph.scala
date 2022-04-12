@@ -498,14 +498,14 @@ object graph
                 var notAPath: Boolean = false;
                 var returnLength: Option[Long] = Option.empty[Long]
 
-                path.toVector.sliding(2).foreach(pair => {
+                path.sliding(2).foreach(pair => {
                     if (getEdgeWeight(pair.head, pair.last).isDefined) {
                         length += getEdgeWeight(pair.head, pair.last).get
 
                     } else notAPath = true
                 })
 
-                if (!notAPath) returnLength = Try(length).toOption
+                if (!notAPath) returnLength = Some(length)
 
                 returnLength
             }
@@ -687,9 +687,9 @@ object graph
             def geneticTSP(initPop:Seq[Seq[T]], inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
                 
                 // pop = a random collection of tours of size
-                var pop: Seq[Seq[T]] = initPop.toVector
-                var startCity: T = 0.asInstanceOf[T]
-                var endCity: T = 0.asInstanceOf[T]
+                var pop: Seq[Seq[T]] = initPop
+                var startCity: T = vertices.toSeq.head
+                var endCity: T = vertices.toSeq.head
 
                 // for a fixed number of iterations do
                 for (i <- 1 to maxIters) {
@@ -698,7 +698,8 @@ object graph
                     for (tour <- pop if tour.size > 2) {
 
                         // newTour = copy(tour)
-                        var newTour: Seq[T] = tour.toVector
+                        var newTour: Seq[T] = tour
+                        var otherTour: Seq[T] = tour
                         
                         // startCity = randomCity(newTour)
                         startCity = newTour(Random.nextInt(newTour.size))
@@ -710,28 +711,33 @@ object graph
                             if (Random.nextFloat() <= inversionProb) {
                                 // endCity = randomCity(newTour \ startCity)
                                 // temporarily remove the startCity from the tour
-                                var tempTour = newTour.filterNot(city => city == startCity)
-
-                                // pick a random city from the remaining cities
-                                endCity = tempTour(Random.nextInt(tempTour.size))
+                                while (endCity == startCity) {
+                                    endCity = newTour(Random.nextInt(newTour.size))
+                                }
                             }
                             else {
-                                // otherTour = randomTour(pop \ tour)
-                                // temporarily remove the tour from the population (pop)
-                                var tempPop = pop.filterNot(tempTour => tempTour == tour)
-
-                                // pick a random tour from the remaining tours
-                                var otherTour: Seq[T] = tempPop(Random.nextInt(tempPop.size)).toVector
+                                while (otherTour == tour) {
+                                    // otherTour = randomTour(pop \ tour)
+                                    // temporarily remove the tour from the population (pop)
+                                    otherTour = pop(Random.nextInt(pop.size))
+                                }
 
                                 // endCity = city next to startCity in otherTour
                                 // for startCity we look up which city is adjacent to it in otherTour
-                                var tempOtherTour = otherTour.filterNot(city => city == startCity)
-                                endCity = tempOtherTour(Random.nextInt(tempOtherTour.size))
+                                
+                                var end = true
+                                while (endCity == startCity && end) {
+                                    // check for index out of bounds
+                                    if (otherTour.indexOf(startCity) + 1 < otherTour.size) {
+                                        endCity = otherTour(otherTour.indexOf(startCity) + 1)
+                                    } else {
+                                        end = false
+                                    }
+                                }
                             }
-
                             // if startCity is adjacent to endCity in newTour then
                             // if they're already next to each other, then we're done
-                            if (getAdjacent(startCity).toSeq.contains(endCity)) {
+                            if (getAdjacent(startCity).toVector.contains(endCity)) {
                                 repeat = false
                             }
                             else {
@@ -744,31 +750,24 @@ object graph
                                 // prefix + reverse(mid) + end
                                 newTour = prefix ++ mid.reverse ++ end
 
-                                startCity = endCity
+                                startCity = endCity 
                             }
                         }
 
                         //if tourLength(newTour) < tourLength(tour) then replace tour with newTour in pop
-                        if (pathLength(newTour.map(vertex => vertex)).isDefined
-                            && pathLength(tour.map(vertex => vertex)).isDefined
+                        if (pathLength(newTour.map(vertex => vertex)).isDefined && pathLength(tour.map(vertex => vertex)).isDefined
                             && pathLength(newTour.map(vertex => vertex)).get < pathLength(tour.map(vertex => vertex)).get) {
                             
                             // replace tour with newTour in pop
-                            pop = pop.filter(tour => tour != newTour) :+ newTour
+                            pop = pop.updated(pop.indexOf(tour), newTour)
                         }
                     }
                 }
 
                 // return the shortest tour in pop
-                var bestTour = pop.head.toVector
+                var bestTour = pop.head
 
-                for (tour <- pop) {
-                    if (pathLength(tour.map(vertex => vertex)).isDefined && pathLength(bestTour.map(vertex => vertex)).isDefined) {
-                        if (pathLength(tour.map(vertex => vertex)).get < pathLength(bestTour.map(vertex => vertex)).get) {
-                            bestTour = pop.minBy(tour => pathLength(tour.map(vertex => vertex)).get).toVector
-                        }
-                    }
-                }
+                bestTour = pop.minBy(tour => pathLength(tour.map(vertex => vertex)).get)
 
                 // append the start city to the end of the tour
                 bestTour = bestTour :+ bestTour.head
@@ -780,16 +779,6 @@ object graph
                 }
             }
 
-
-            def randomTour(pop:Seq[Seq[T]]): Seq[T] = {
-                // return a random tour from the collection of tours
-                if (pop.size > 0) {
-                    pop(Random.nextInt(pop.size))
-                }
-                else {
-                    Seq[T]()
-                }
-            }
 
             /**
              * Returns a string representation of the graph
@@ -818,9 +807,9 @@ object graph
     {
         // var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
-        var path = undirectedGraph.geneticTSP(50, 0.2f, 1000)
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        var undirectedGraph = Graph.fromCSVFile (false, "src/main/graph_10_319.csv")
+        var path = undirectedGraph.geneticTSP(600, 0.2f, 1000)
 
         // add the last edge to end of path
         var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
