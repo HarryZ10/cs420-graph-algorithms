@@ -1,8 +1,12 @@
 import java.io.{File, IOException}
 import java.util.Scanner
 import scala.util.Try
-import scala.collection.mutable.{Map, Set}
+import scala.collection.mutable.{Map}
+import scala.collection.immutable.HashMap
+import scala.collection.immutable.HashSet
+
 import scala.util.{Random, Try}
+import scala.collection.mutable
 
 object graph
 {
@@ -513,6 +517,7 @@ object graph
              * or None if no path exists
              */
             def shortestPathBetween(source:T, destination:T): Option[Seq[Edge[T]]] = {
+                import scala.collection.mutable.Set
                 // if (source == destination) return Some(Seq[Edge[T]](new Edge[T](source, destination, 0)))
                 if ((source != null || destination != null) || source != destination) {
                     // create a mutable map of vertices and their distances from the source
@@ -669,7 +674,7 @@ object graph
 
 
             def dynamicTSP:Seq[Edge[T]] = {
-
+                import scala.collection.immutable.Set
                 if (vertices.isEmpty || edges.isEmpty) {
                     Seq[Edge[T]]()
                 }
@@ -678,10 +683,10 @@ object graph
                 var depot: T = vertices.head
 
                 // Map dist = a Map from a Set of vertices and a vertex to a distance (number), initially empty Map
-                var dist = Map[Set[T], Map[T, Int]]()
+                var dist = HashMap[Set[T], HashMap[T, Int]]()
 
                 // parent = a Map from a Set of vertices and a vertex to a vertex, initially empty
-                var parent = Map[Set[T], Map[T, T]]()
+                var parent = HashMap[Set[T], HashMap[T, T]]()
 
                 // List ends = graph.vertices \ depot
                 // Vector of ends of vertices without the depot
@@ -698,17 +703,20 @@ object graph
 
                 // BASE CASE CLEARED!
                 for (k <- ends) {
-                    dist(Set(k)) = Map(k -> getEdgeWeight(depot, k).getOrElse(0))
-                    parent(Set(k)) = Map(k -> depot)
+                    // dist(Set(k)) = HashMap(k -> getEdgeWeight(depot, k).getOrElse(0))
+                    val innerDist: HashMap[T, Int] = HashMap(k -> getEdgeWeight(depot, k).getOrElse(0))
+                    dist += Set(k) -> innerDist
+
+                    val innerParent: HashMap[T, T] = HashMap(k -> depot)
+                    parent += Set(k) -> innerParent
                 }
 
                 // RECURSIVE CASE
-                for (subSize <- 2 to ends.size) {
+                for (subSize <- 2 to ends.size + 1) {
+                    val allSubsets = ends.toSet.subsets(subSize)
+              
+                    for (hist <- allSubsets) {
 
-                    //for hist in all subsets of ends of size = subSize
-                    for (hist <- ends.subsets(subSize)) {
-
-                        // for k in hist
                         for (k <- hist) {
 
                             var saveX = 0.asInstanceOf[T]
@@ -718,58 +726,96 @@ object graph
 
                                 // dist(hist, k) = min(dist(hist \ k, x) + edgeWeight(x, k))
                                 // if x is in dist at key newHistTemp
+                                if (dist.contains(hist - k)) {
+                                    val minDist = dist(hist.filter(v => v != k)).minBy(x => dist(hist.filter(v => v != k))(x._1))._2 + getEdgeWeight(x, k).getOrElse(0)
                                 
-                                dist += (hist ->  Map(k -> (dist(hist.filter(v => v != k)).getOrElse(x, 0) + getEdgeWeight(x, k).getOrElse(0))))
-                                saveX = x
+                                    dist += Set(k) -> (dist(hist.filter(v => v != k)) + (x -> minDist))
+                                    saveX = x
+                                }
+                                else {
+                                    // if x is not in dist at key newHistTemp
+                                    val minDist = getEdgeWeight(x, k).getOrElse(0)
+                                    dist += Set(k) -> (HashMap(x -> minDist))
+                                    saveX = x
+                                }
                             }
 
-                            parent += (hist -> Map(k -> saveX))
+                            // if parent contains hist - k
+                            if (parent.contains(hist - k)) {
+                                // parent(hist, k) = parent(hist \ k, saveX)
+                                parent += Set(k) -> (parent(hist.filter(v => v != k)) + (saveX -> k))
+                            }
+                            else {
+                                // if parent does not contain hist - k
+                                parent += Set(k) -> (HashMap(saveX -> k))
+                            }
                         }
+                        
+                    } 
+                }
+
+                var opt: T = depot
+
+                // if (dist.contains(ends)) {
+                //     opt = ends.minBy(x => dist(ends).getOrElse(x, 0) + getEdgeWeight(x, depot).getOrElse(0))
+                // }
+
+                val bigSet = ends.toSet
+                val totalHash = dist.get(bigSet).getOrElse(HashMap[T, Int]())
+
+                for (k <- ends) {
+                    // if dist(ends, k) + edgeWeight(k, depot) < dist(ends, optimum) + edgeWeight(optimum, depot)
+                    if (totalHash.getOrElse(k, 0) + getEdgeWeight(k, depot).getOrElse(0) < totalHash.getOrElse(opt, 0) + getEdgeWeight(opt, depot).getOrElse(0)) {
+                        // optimum = k
+                        opt = k
                     }
                 }
 
-                // optimum is the argmin of x in ends of dist(ends, x) + edgeWeight(x, depot)
-                var opt: T = ends.minBy(x => dist(ends).getOrElse(x, 0) + getEdgeWeight(x, depot).getOrElse(0))
 
-                return rewind(parent, opt)
+                rewind (parent, opt, ends)
             }
 
 
-            def rewind(parent: Map[Set[T], Map[T, T]], opt: T): Seq[Edge[T]] = {
+            def rewind(parent: HashMap[Set[T], HashMap[T, T]], opt: T, ends: Set[T]): Seq[Edge[T]] = {
+                import scala.collection.immutable.Set
+                import scala.collection.mutable.Set
+                import scala.collection.mutable.ListBuffer
+                import scala.collection.mutable.HashMap
 
-                // we will use this to store the edges
-                var edges = Seq[Edge[T]]()
+                var path: ListBuffer[T] = ListBuffer[T]()
+                var current = vertices.head
+                var notAPath = false
+                var currOpt = opt
+                var presOpt = opt
 
-                // we will use this to store the vertices
-                var _vertices = Seq[T]()
+                var myEnd: mutable.Set[T] = mutable.Set() ++ ends
 
-                // we will use this to store the current vertex
-                var current = opt
+                while (!notAPath) {
+                    // if current is not in the previous map, then there is no path
+                    if (parent.contains(ends) && parent(ends).contains(currOpt)) {
+ 
+                        presOpt = currOpt
 
-                // while current is not the depot
-                while (current != vertices.head) {
+                        currOpt = parent(ends)(currOpt)
 
-                    // add current to the beginning of the vertices
-                    _vertices = current +: _vertices
+                        path += currOpt
+                        
 
-                    // if current is not in the parent map, then there is no path
-                    if (parent.contains(Set(current))) {
-                        current = parent(Set(current))(current)
+
+                        
+
+
+
+                    } else {
+                        notAPath = true
                     }
                 }
 
-                // add the depot to the beginning of the vertices
-                _vertices = vertices.head +: _vertices
+                
 
-                // for i = 0 until len(vertices) - 1 do
-                for (i <- 0 until _vertices.length - 1) {
+                // return edge list of the path
+                Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq)
 
-                    // add edge from vertices(i) to vertices(i + 1) to edges
-                    edges = edges :+ new Edge[T](_vertices(i), _vertices(i + 1), getEdgeWeight(_vertices(i), _vertices(i + 1)).getOrElse(0))
-                }
-
-                // return edges
-                edges
             }
 
 
