@@ -54,6 +54,8 @@ object graph
 
         def branchBoundTSP(heur:(Graph[T], Seq[T]) => Long):Seq[Edge[T]]
 
+        def heur(graph: Graph[T], tour: Seq[T]): Long
+
         def dynamicTSP:Seq[Edge[T]]
 
         override def toString:String
@@ -781,7 +783,13 @@ object graph
                 }
             }
 
-            def branchBoundTSP(heur:(Graph[T], Seq[T]) => Long):Seq[Edge[T]] = {
+
+            def heur(graph: Graph[T], tour: Seq[T]): Long = {
+                val heuristic = graph.getVertices.size - tour.size
+                heuristic.toLong
+            }
+
+            def branchBoundTSP(heur: (Graph[T], Seq[T]) => Long):Seq[Edge[T]] = {
 
                 var depot = vertices.head
                 // define empty stack (LIFO) of Seq[T]
@@ -804,7 +812,7 @@ object graph
                     var current = stack.pop()
 
                     // if pathLength(current) + heur(graph, current) < minCost
-                    if (pathLength(current).getOrElse(0L) + heur(this, current) < minCost) {
+                    if (pathLength(current).getOrElse(0L) + this.heur(this, current) < minCost) {
 
                         // if is complete tour of current
                         if (current.size == vertices.size) {
@@ -813,7 +821,8 @@ object graph
                             bestPath = current
 
                             // minCost = pathLength(current)
-                            minCost = pathLength(current).getOrElse(0L) + heur(this, current)
+                            minCost = pathLength(current).getOrElse(0L) + this.heur(this, current)
+                        
                         } else {
 
                             // if current.size() < graph.vertices.size()
@@ -838,22 +847,9 @@ object graph
 
             }
 
-
             def branchBoundTSP:Seq[Edge[T]] = {
-
-                var path = Seq[T]()
-                var depot = vertices.head
-                path = vertices.toSeq :+ depot
-
-                branchBoundTSP((graph, path) => {
-                    var cost = 0L
-                    for (i <- 0 until path.size - 1 if getEdgeWeight(path(i), path(i + 1)).isDefined) {
-                        cost += getEdgeWeight(path(i), path(i + 1)).getOrElse(0)
-                    }
-                    cost
-                })
+                branchBoundTSP(heur)
             }
-
 
             /**
              * Returns a string representation of the graph
@@ -880,7 +876,7 @@ object graph
 
     def main(args: Array[String])
     {
-        // var nonTrivialGraph = Graph[String](false)
+        var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
         var undirectedGraph = Graph.fromCSVFile(false , "src/main/graph5_271.csv")
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
@@ -889,8 +885,8 @@ object graph
         // reverse the middle of the path
         // path = path.slice(0, path.size / 2) ++ path.slice(path.size / 2 + 1, path.size).reverse
 
-        // var branchbound = undirectedGraph.branchBoundTSP((undirectedGraph, path) => 0L)
-        var branchbound = undirectedGraph.branchBoundTSP
+        // var branchbound = undirectedGraph.branchBoundTSP and call heur
+        var branchbound = undirectedGraph.branchBoundTSP(undirectedGraph.heur(_,_))
         var length = undirectedGraph.pathLength(path)
 
         println("Branch and Bound: " + branchbound)
