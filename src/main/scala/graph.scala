@@ -818,8 +818,8 @@ object graph
     {
         // var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
         var path = undirectedGraph.geneticTSP(50, 0.2f, 1000)
 
         // add the last edge to end of path
