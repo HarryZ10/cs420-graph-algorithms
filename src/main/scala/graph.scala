@@ -771,7 +771,6 @@ object graph
                     }
                 }
 
-
                 rewind (parent, opt, ends)
             }
 
@@ -791,30 +790,28 @@ object graph
                 var myEnd: mutable.Set[T] = mutable.Set() ++ ends
 
                 while (!notAPath) {
-                    // if current is not in the previous map, then there is no path
-                    if (parent.contains(ends) && parent(ends).contains(currOpt)) {
- 
+                    if (parent.contains(myEnd.toSet) && parent(myEnd.toSet).contains(currOpt)) {
+                        
                         presOpt = currOpt
-
-                        currOpt = parent(ends)(currOpt)
-
+                        currOpt = parent(myEnd.toSet)(currOpt)
                         path += currOpt
-                        
-
-
-                        
-
-
+                        myEnd -= presOpt
 
                     } else {
                         notAPath = true
                     }
+
+
                 }
 
-                
-
+                // add depot to the end of the path
+                path += vertices.head
+           
                 // return edge list of the path
-                Some(path.sliding(2).map(pair => new Edge[T](pair(0), pair(1), getEdgeWeight(pair(0), pair(1)).get)).toSeq)
+                for (i <- 0 until path.size - 1 if getEdgeWeight(path(i), path(i + 1)).isDefined) yield {
+                    val edge = new Edge[T](path(i), path(i + 1), getEdgeWeight(path(i), path(i + 1)).get)
+                    (edge)
+                }
 
             }
 
