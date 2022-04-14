@@ -770,7 +770,6 @@ object graph
                         opt = k
                     }
                 }
-
                 rewind (parent, opt, ends)
             }
 
@@ -787,21 +786,22 @@ object graph
                 var currOpt = opt
                 var presOpt = opt
 
-                var myEnd: mutable.Set[T] = mutable.Set() ++ ends
+                var myEnd: mutable.Set[T] = ends.toSet.to(mutable.Set)
+                
 
                 while (!notAPath) {
+                    println(myEnd)
+                    println(currOpt)
                     if (parent.contains(myEnd.toSet) && parent(myEnd.toSet).contains(currOpt)) {
                         
                         presOpt = currOpt
                         currOpt = parent(myEnd.toSet)(currOpt)
                         path += currOpt
-                        myEnd -= presOpt
+                        myEnd -= currOpt
 
                     } else {
                         notAPath = true
                     }
-
-
                 }
 
                 // add depot to the end of the path
