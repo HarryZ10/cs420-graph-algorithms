@@ -815,7 +815,7 @@ object graph
                     if (pathLength(current).getOrElse(0L) + this.heur(this, current) < minCost) {
 
                         // if is complete tour of current
-                        if (current.length == vertices.length + 1) {
+                        if (current.length == vertices.length + 1 && current.head == current.last) {
                             // bestPath = current
                             bestPath = current
 
@@ -833,6 +833,8 @@ object graph
                                     // push current + vertex onto stack
                                     stack.push(current :+ vertex)
                                 }
+                            } else {
+                                stack.push(current :+ depot)
                             }
                         }
                     }
@@ -886,12 +888,15 @@ object graph
         // reverse the middle of the path
         // path = path.slice(0, path.size / 2) ++ path.slice(path.size / 2 + 1, path.size).reverse
 
-        var branchbound = undirectedGraph.branchBoundTSP
+        var path = undirectedGraph.branchBoundTSP
+        
         // var branchbound = undirectedGraph.branchBoundTSP(undirectedGraph.heur(_,_))
-        // var length = undirectedGraph.pathLength(vertex => branchbound.map(_.sourc).contains(vertex))
+        var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
+        
+        var length = undirectedGraph.pathLength(onlyVerticesFromPath)
 
-        println("Branch and Bound: " + branchbound)
-        println("Length: " + length)
+        println(length)
+        println(path)
         
 
     }
