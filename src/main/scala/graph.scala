@@ -815,18 +815,17 @@ object graph
                     if (pathLength(current).getOrElse(0L) + this.heur(this, current) < minCost) {
 
                         // if is complete tour of current
-                        if (current.size == vertices.size) {
-
+                        if (current.length == vertices.length + 1) {
                             // bestPath = current
                             bestPath = current
 
                             // minCost = pathLength(current)
-                            minCost = pathLength(current).getOrElse(0L) + this.heur(this, current)
+                            minCost = pathLength(current).getOrElse(0L)
                         
                         } else {
 
                             // if current.size() < graph.vertices.size()
-                            if (current.size < vertices.size) {
+                            if (current.length < vertices.length) {
 
                                 // for vertex in graph and not in current
                                 for (vertex <- vertices if !current.contains(vertex)) {
@@ -881,16 +880,15 @@ object graph
     {
         var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-        var undirectedGraph = Graph.fromCSVFile(false , "src/main/graph5_271.csv")
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false , "src/main/graph5_271.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
 
-        var path: Seq[String] = undirectedGraph.getVertices.toSeq ++ Seq(undirectedGraph.getVertices.head)
         // reverse the middle of the path
         // path = path.slice(0, path.size / 2) ++ path.slice(path.size / 2 + 1, path.size).reverse
 
         var branchbound = undirectedGraph.branchBoundTSP
         // var branchbound = undirectedGraph.branchBoundTSP(undirectedGraph.heur(_,_))
-        var length = undirectedGraph.pathLength(path)
+        // var length = undirectedGraph.pathLength(vertex => branchbound.map(_.sourc).contains(vertex))
 
         println("Branch and Bound: " + branchbound)
         println("Length: " + length)
