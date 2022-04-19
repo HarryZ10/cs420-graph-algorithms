@@ -8,6 +8,10 @@ import scala.collection.immutable.HashSet
 import scala.util.{Random, Try}
 import scala.collection.mutable
 
+import scala.util.control._
+
+// create a Breaks object 
+
 object graph
 {
     /*
@@ -26,8 +30,6 @@ object graph
         def getEdgeWeight(source:T, destination:T):Option[Int]
 
         def getEdge(source:T, destination:T):Option[Edge[T]]
-
-        def minimumSpanningTree:Option[Graph[T]]
 
         @throws(classOf[IllegalArgumentException])
         def addVertex(vertex:T):Graph[T]
@@ -85,8 +87,8 @@ object graph
          */
         def apply[T](isDirected: Boolean): Graph[T] =
         {
-            val vertices: IndexedSeq[T] = IndexedSeq[T]()
-            val edges: Seq[(T,T,Int)] = Seq[(T,T,Int)]()
+            val vertices: HashSet[T] = HashSet[T]()
+            val edges: HashMap[(T, T), Int] = HashMap[(T, T), Int]()
             
             new GraphImpl(isDirected, vertices, edges)
         }
@@ -114,7 +116,12 @@ object graph
                 val numVertices = scanner.nextLine().toInt
 
                 // read the vertices
-                val vertices = (1 to numVertices).map(i => scanner.nextLine())
+                var vertices: HashSet[String] = HashSet[String]()
+
+                for (i <- 0 until numVertices)
+                {
+                    vertices += scanner.nextLine()
+                }
 
                 // read the number of edges
                 val numEdges = scanner.nextLine().toInt
@@ -122,13 +129,18 @@ object graph
                 // read the edges
                 val edges = (1 to numEdges).map(i =>
                 {
-                    val edge = scanner.nextLine().split(",")
-                    (edge(0), edge(1), edge(2).toInt)
-                })
+                    val line = scanner.nextLine()
+                    val tokens = line.split(",")
+                    val source = tokens(0)
+                    val destination = tokens(1)
+                    val weight = tokens(2).toInt
+                    ((source, destination), weight)
+                }).toMap
+
 
                 scanner.close()
 
-                new GraphImpl(isDirected, vertices, edges)
+                new GraphImpl(isDirected, vertices, HashMap[(String, String), Int]() ++ edges)
             }
             catch {
                 case e:IOException => throw new IOException(`fileName` + " cannot be processed")
@@ -145,8 +157,8 @@ object graph
          */
         private class GraphImpl[T] (
             val isDirected:Boolean,
-            val vertices: IndexedSeq[T],
-            val edges: Seq[(T,T,Int)]
+            val vertices: HashSet[T],
+            val edges: HashMap[(T, T), Int]
         ) extends Graph[T]
         {
             /**
@@ -161,71 +173,38 @@ object graph
              */
             def getEdges:Iterable[Edge[T]] =
             {
-                // create new seq from edges using map
-                var edgeSeq: Seq[Edge[T]] =
-                    edges.map(edge => new Edge(edge._1, edge._2, edge._3))
+                var edges: HashSet[Edge[T]] = HashSet[Edge[T]]()
 
-                if (!isDirected) {
-                    // for each edge, delete duplicate weights
-                    edgeSeq = edgeSeq.map(edge =>
+                for (((source, destination), weight) <- this.edges)
+                {
+                    if (isDirected)
                     {
-                        val newEdge = new Edge(edge.destination, edge.source, edge.weight)
-                        newEdge
-                    })
-
-                    // sort the edges
-                    edgeSeq = edgeSeq.sortWith((edge2, edge1) =>
-                    {
-                        if (edge2.weight > edge1.weight) false
-                        else if (edge2.weight < edge1.weight) true
-                        else false
-
-                    })
-
-                    // remove duplicate edges (same source and destination) but
-                    // don't delete different edges with the same weight
-                    edgeSeq = edgeSeq.foldLeft(Seq[Edge[T]]())((acc, edge) =>
-                    {
-                        if (acc.isEmpty ||((acc.last.weight != edge.weight) && (acc.head.source != edge.source && acc.head.destination != edge.destination)))
-                            acc :+ edge
-                        else
-                            acc
-                    })
-
-                    // add back the edges with the same weight but different source and destination
-                    for (i <- 0 until edges.size)
-                    {
-                        // Conditions
-                        // add missing edges with the same weight
-                        // the edges cannot be a reverse of an existing edge
-                        // the edges cannot be a duplicate of an existing edge
-
-                        // if the edge is not a reverse of an existing edge
-                        if (!edgeSeq.exists(edge => edge.source == edges(i)._2 && edge.destination == edges(i)._1 && edge.weight == edges(i)._3))
-                        {
-                            // if the edge is not a duplicate of an existing edge
-                            if (!edgeSeq.exists(edge => edge.source == edges(i)._1 && edge.destination == edges(i)._2 && edge.weight == edges(i)._3))
-                            {
-                                edgeSeq = edgeSeq :+ new Edge(edges(i)._1, edges(i)._2, edges(i)._3)
-                            }
-                        }
+                        edges += new Edge(source, destination, weight)
                     }
-                    
-                    
+                    else
+                    {
+                        edges += new Edge(source, destination, weight)
+                        edges += new Edge(destination, source, weight)
+                    }
                 }
 
-                edgeSeq
+                edges
             }
 
             def getEdge(source:T, destination:T):Option[Edge[T]] = {
 
                 // get the edge from the edges list
-                val edge = edges.find(e => e._1 == source && e._2 == destination)
-                // if edge exists, return it
+                val edge = this.edges.get((source, destination))
+
+                // if the edge exists, return it
                 if (edge.isDefined)
-                    Some(new Edge(edge.get._1, edge.get._2, edge.get._3))
+                {
+                    Some(new Edge(source, destination, edge.get))
+                }
                 else
+                {
                     None
+                }
             }
 
 
@@ -234,16 +213,7 @@ object graph
              * @return true if an edge exists between the two given vertices
              */
             def edgeExists(source:T, destination:T):Boolean = {
-                
-                if (isDirected)
-                {
-                    edges.exists(e => e._1 == source && e._2 == destination)
-                }
-                else
-                {
-                    edges.exists(e => e._1 == source && e._2 == destination) ||
-                    edges.exists(e => e._1 == destination && e._2 == source)
-                }
+                this.edges.get((source, destination)).isDefined
             }
 
 
@@ -254,20 +224,12 @@ object graph
             def getEdgeWeight(source:T, destination:T):Option[Int] = {
                 
                 // count each edge once even if it's undirected
-                var edge = edges.find(e => e._1 == source && e._2 == destination)
+                val edge = (source, destination)
+                val reverseEdge = (destination, source)
 
-                if (!isDirected) {
-                    // if the edge is not found, check if it's a reverse edge
-                    if (edge.isEmpty)
-                        edge = edges.find(e => e._1 == destination && e._2 == source)
-                }
-
-                // if edge exists, return it
-                if (edge.isDefined)
-                    Some(edge.get._3)
-                else {
-                    None
-                }
+                if (edges.contains(edge)) Some(edges(edge))
+                else if (edges.contains(reverseEdge)) Some(edges(reverseEdge))
+                else None
             }
 
 
@@ -289,7 +251,9 @@ object graph
                 }
                 else
                 {
-                    new GraphImpl(isDirected, vertices :+ vertex, edges)
+                    val newVertices = vertices + vertex
+                    val newEdges = edges
+                    new GraphImpl(isDirected, newVertices, newEdges)
                 }
             }
 
@@ -309,17 +273,13 @@ object graph
 
                 if (vertices.contains(vertex))
                 {
-                    // if the vertex is in any edges, remove them
-                    val newEdges = edges.filter(edge => edge._1 != vertex && edge._2 != vertex)
-
-                    // remove the vertex from the list of vertices
-                    val newVertices = vertices.filter(v => v != vertex)
-
+                    val newVertices = vertices - vertex
+                    val newEdges = edges.filter(edge => !(edge._1._1 == vertex || edge._1._2 == vertex))
                     new GraphImpl(isDirected, newVertices, newEdges)
                 }
                 else
                 {
-                    throw new IllegalArgumentException("Vertex does not exist")
+                    throw new IllegalArgumentException("Vertex doesn't exist")
                 }
             }
 
@@ -352,11 +312,14 @@ object graph
                     {
                         if (isDirected)
                         {
-                            new GraphImpl(isDirected, vertices, edges :+ (source, destination, weight))
+                            val newEdges = edges + ((source, destination) -> weight)
+                            new GraphImpl(isDirected, vertices, newEdges)
                         }
                         else
                         {
-                            new GraphImpl(isDirected, vertices, edges :+ (source, destination, weight) :+ (destination, source, weight))
+                            val newEdges = edges + ((source, destination) -> weight)
+                            val newEdges2 = edges + ((destination, source) -> weight)
+                            new GraphImpl(isDirected, vertices, newEdges ++ newEdges2)
                         }
                     }
                 }
@@ -380,12 +343,20 @@ object graph
                 {
                     if (edgeExists(source, destination))
                     {
-                        val newEdges = edges.filterNot(edge => edge._1 == source && edge._2 == destination)
-                        new GraphImpl(isDirected, vertices, newEdges)
+                        val newEdges = edges - ((source, destination))
+                        if (isDirected)
+                        {
+                            new GraphImpl(isDirected, vertices, newEdges)
+                        }
+                        else
+                        {
+                            val newEdges2 = edges - ((destination, source))
+                            new GraphImpl(isDirected, vertices, newEdges ++ newEdges2)
+                        }
                     }
                     else
                     {
-                        throw new IllegalArgumentException("Edge does not exist")
+                        throw new IllegalArgumentException("Edge doesn't exist")
                     }
                 }
                 else
@@ -394,86 +365,6 @@ object graph
                 }
             }
 
-            def minimumSpanningTree:Option[Graph[T]] = {
-
-                var tree = Graph[T](false)
-                var dist = Map[T, Int]()
-                // immutable map parent 
-                var parent: Map[T, T] = Map[T, T]()
-
-                var visited = Set[T]()
-
-                var closest: Map[T, Int] = Map[T, Int]()
-                var current = 0.asInstanceOf[T]
-                var start = 0.asInstanceOf[T]
-                var complete: Boolean = true
-
-                if (vertices.isEmpty || edges.isEmpty) 
-                {
-                    None
-                }
-                else
-                {
-                    start = vertices.head
-
-                    if (!isDirected) {
-
-                        // Initialize parent and dist with vertices adjacent to start
-                        var parent = vertices.map(v => (v, start)).toMap
-                        var dist = edges.filter(e => e._1 == start).map(e => (e._2, e._3)).toMap
-
-                        // Initialize tree with vertices
-                        for (v <- vertices) {
-                            tree = tree.addVertex(v)
-                        }
-
-                        // // Initialize visited with start
-                        visited += start
-
-                        // while visited is not equal to vertices
-                        while (visited.size < vertices.length && complete)
-                        {
-
-                            // find closest vertex
-                            var closest = dist.filter(d => !visited.contains(d._1))
-
-                            if (closest.isEmpty)
-                            {
-                                complete = false
-                            }
-                            else 
-                            {
-                                current = closest.minBy(_._2)._1
-
-                                visited += current
-
-                                tree = tree.addEdge(parent(current), current, dist(current)) 
-
-                                tree = tree.removeEdge(current, parent(current))   
-
-                                for (other <- getAdjacent(current) if !visited.contains(other)) {
-                                
-                                    var newDist = getEdgeWeight(current, other).getOrElse(Int.MaxValue)
-
-                                    if (newDist < dist.getOrElse(other, Int.MaxValue) || !dist.contains(other)) {
-                                        dist += (other -> newDist)
-                                        parent += (other -> current)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (!complete && visited.size < tree.getVertices.size - 1)
-                    {
-                        None
-                    }
-                    else
-                    {
-                        Some(tree)
-                    }
-                }
-            }
 
             /**
              * Get adjacent vertices of the source vertex given
@@ -485,7 +376,7 @@ object graph
                     throw new IllegalArgumentException("Vertex does not exist")
                 }
 
-                edges.filter(e => (e._1 == source)).map(e => e._2)
+                edges.filter(e => e._1._1 == source).map(e => e._1._2)
             }
 
 
@@ -494,21 +385,12 @@ object graph
              * or None if no path exists
              */
             def pathLength(path: Seq[T]): Option[Long] = {
-
                 var length = 0L
-                var notAPath: Boolean = false;
-                var returnLength: Option[Long] = Option.empty[Long]
-
                 path.toVector.sliding(2).foreach(pair => {
-                    if (getEdgeWeight(pair.head, pair.last).isDefined) {
-                        length += getEdgeWeight(pair.head, pair.last).get
-
-                    } else notAPath = true
+                    length += getEdgeWeight(pair.head, pair.last).get
                 })
 
-                if (!notAPath) returnLength = Try(length).toOption
-
-                returnLength
+                Some(length)
             }
 
 
@@ -543,7 +425,7 @@ object graph
                     previous += (source -> destination)
 
                     // while visited size is less than the number of vertices
-                    while (visited.size < vertices.length && !notAPath) {
+                    while (visited.size < vertices.size && !notAPath) {
 
                         closest = distances.filter(distance => !visited.contains(distance._1))
                         
@@ -674,145 +556,96 @@ object graph
 
 
             def dynamicTSP:Seq[Edge[T]] = {
-                import scala.collection.immutable.Set
-                if (vertices.isEmpty || edges.isEmpty) {
-                    Seq[Edge[T]]()
-                }
+
+                if (vertices.isEmpty || edges.isEmpty) Seq[Edge[T]]()
 
                 // depot is the first vertex
                 var depot: T = vertices.head
 
                 // Map dist = a Map from a Set of vertices and a vertex to a distance (number), initially empty Map
-                var dist = HashMap[Set[T], HashMap[T, Int]]()
+                var dist = HashMap[(Set[T], T), Long]()
 
-                // parent = a Map from a Set of vertices and a vertex to a vertex, initially empty
-                var parent = HashMap[Set[T], HashMap[T, T]]()
+                // parent = a Map from a (Set of vertices and a vertex )to a vertex, initially empty
+                var parent = HashMap[(Set[T], T), T]()
 
                 // List ends = graph.vertices \ depot
                 // Vector of ends of vertices without the depot
                 var ends: Set[T] = Set[T]()
 
+                var valDist = 0.asInstanceOf[T]
+
+                var distSave: Long = 0L
+
                 // for each vertex in ends do
-                for (vertex <- vertices.tail) {
-                    // ends.push(vertex)
-                    ends += vertex
-                }
+                for (vertex <- vertices.tail) ends += vertex
 
                 // remove the depot from ends
                 ends -= depot
 
                 // BASE CASE CLEARED!
                 for (k <- ends) {
-                    // dist(Set(k)) = HashMap(k -> getEdgeWeight(depot, k).getOrElse(0))
-                    val innerDist: HashMap[T, Int] = HashMap(k -> getEdgeWeight(depot, k).getOrElse(0))
-                    dist += Set(k) -> innerDist
+                    // dist({k}, k) = graph.edgeW eight(depot, k)
+                    dist += ((Set[T](k), k) -> getEdgeWeight(depot, k).get)
 
-                    val innerParent: HashMap[T, T] = HashMap(k -> depot)
-                    parent += Set(k) -> innerParent
+                    // parent({k}, k) = depot
+                    parent += (Set(k) -> k) -> depot
                 }
 
                 // RECURSIVE CASE
-                for (subSize <- 2 to ends.size + 1) {
-                    val allSubsets = ends.toSet.subsets(subSize)
-              
-                    for (hist <- allSubsets) {
+                for (subSize <- 2 to ends.size) {
+
+                    for (hist <- ends.subsets(subSize)) {
 
                         for (k <- hist) {
-
-                            var saveX = 0.asInstanceOf[T]
                             
-                            // x∈hist\k for all x∈hist
-                            for (x <- hist if x != k) {
+                            println(dist)
+                            println(parent)
 
-                                // dist(hist, k) = min(dist(hist \ k, x) + edgeWeight(x, k))
-                                // if x is in dist at key newHistTemp
-                                if (dist.contains(hist - k)) {
-                                    val minDist = dist(hist.filter(v => v != k)).minBy(x => dist(hist.filter(v => v != k))(x._1))._2 + getEdgeWeight(x, k).getOrElse(0)
-                                
-                                    dist += Set(k) -> (dist(hist.filter(v => v != k)) + (x -> minDist))
-                                    saveX = x
-                                }
-                                else {
-                                    // if x is not in dist at key newHistTemp
-                                    val minDist = getEdgeWeight(x, k).getOrElse(0)
-                                    dist += Set(k) -> (HashMap(x -> minDist))
-                                    saveX = x
-                                }
-                            }
+                            // dist(hist, k) = minBy x∈hist\k = dist(hist \ k, x) + graph.edgeWeight(x, k)
+                            var x = hist - k
+                            var min = Long.MaxValue
+                            var minVertex = k
 
-                            // if parent contains hist - k
-                            if (parent.contains(hist - k)) {
-                                // parent(hist, k) = parent(hist \ k, saveX)
-                                parent += Set(k) -> (parent(hist.filter(v => v != k)) + (saveX -> k))
-                            }
-                            else {
-                                // if parent does not contain hist - k
-                                parent += Set(k) -> (HashMap(saveX -> k))
+                            for (vertex <- x) {
+                                min = dist((x, vertex)) + getEdgeWeight(vertex, k).get
+                                minVertex = vertex
+
+                                if (min < dist((x, k))) {
+                                    dist += ((x, k) -> min)
+                                    parent += ((x, k) -> minVertex)
+                                }
                             }
                         }
                         
                     } 
                 }
 
+                println("parent: " + parent)
+                println("dist: " + dist)
+                
                 var opt: T = depot
 
-                // if (dist.contains(ends)) {
-                //     opt = ends.minBy(x => dist(ends).getOrElse(x, 0) + getEdgeWeight(x, depot).getOrElse(0))
-                // }
+                // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot) x∈ends
+                opt = ends.minBy(x => dist(ends, x) + getEdgeWeight(x, depot).get)
 
-                val bigSet = ends.toSet
-                val totalHash = dist.get(bigSet).getOrElse(HashMap[T, Int]())
+                // start rewinding the tour
+                var tour: mutable.ListBuffer[T] = mutable.ListBuffer[T]()
 
-                for (k <- ends) {
-                    // if dist(ends, k) + edgeWeight(k, depot) < dist(ends, optimum) + edgeWeight(optimum, depot)
-                    if (totalHash.getOrElse(k, 0) + getEdgeWeight(k, depot).getOrElse(0) < totalHash.getOrElse(opt, 0) + getEdgeWeight(opt, depot).getOrElse(0)) {
-                        // optimum = k
-                        opt = k
-                    }
-                }
-                rewind (parent, opt, ends)
-            }
-
-
-            def rewind(parent: HashMap[Set[T], HashMap[T, T]], opt: T, ends: Set[T]): Seq[Edge[T]] = {
-                import scala.collection.immutable.Set
-                import scala.collection.mutable.Set
-                import scala.collection.mutable.ListBuffer
-                import scala.collection.mutable.HashMap
-
-                var path: ListBuffer[T] = ListBuffer[T]()
-                var current = vertices.head
-                var notAPath = false
-                var currOpt = opt
-                var presOpt = opt
-
-                var myEnd: mutable.Set[T] = ends.toSet.to(mutable.Set)
-                
-
-                while (!notAPath) {
-                    println(myEnd)
-                    println(currOpt)
-                    if (parent.contains(myEnd.toSet) && parent(myEnd.toSet).contains(currOpt)) {
-                        
-                        presOpt = currOpt
-                        currOpt = parent(myEnd.toSet)(currOpt)
-                        path += currOpt
-                        myEnd -= currOpt
-
-                    } else {
-                        notAPath = true
-                    }
+                // while opt != depot do
+                while (opt != depot) {
+                    tour.append(opt)
+                    ends -= opt
+                    opt = parent(ends, opt)
                 }
 
-                // add depot to the end of the path
-                path += vertices.head
-           
-                // return edge list of the path
-                for (i <- 0 until path.size - 1 if getEdgeWeight(path(i), path(i + 1)).isDefined) yield {
-                    val edge = new Edge[T](path(i), path(i + 1), getEdgeWeight(path(i), path(i + 1)).get)
+                // connect the last edge to the start of the tour
+                tour.append(depot)
+
+                // return seq of edges
+                for (i <- 0 until tour.size - 1) yield {
+                    val edge = new Edge[T](tour(i), tour(i + 1), getEdgeWeight(tour(i), tour(i + 1)).get)
                     (edge)
                 }
-
             }
 
 
@@ -826,13 +659,13 @@ object graph
                 val sb = new StringBuilder
                 
                 val vertices = getVertices
-                val edges = getEdges
+                val _edges = edges
 
                 sb.append("Vertices: ")
                 sb.append(vertices.mkString(", "))
 
                 sb.append("\nEdges: ")
-                sb.append(edges.mkString(", "))
+                sb.append(_edges.mkString(", "))
 
                 sb.toString()
             }
@@ -847,7 +680,5 @@ object graph
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
 
         println(undirectedGraph.dynamicTSP)
-        
-
     }
 }
