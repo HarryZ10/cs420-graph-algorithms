@@ -405,18 +405,16 @@ object graph
             def geneticTSP(popSize:Int, inversionProb:Float, maxIters:Int):Seq[Edge[T]] = {
 
                 // pop = a random collection of tours of popSize
-                var pop: Set[Set[T]] = Set[Set[T]]()
+                var pop: Vector[Vector[T]] = Vector[Vector[T]]()
 
+                // for i = 0 to popSize - 1 do
                 for (i <- 0 until popSize) {
-                    var tour: Set[T] = Set[T]()
-                    for (j <- 0 until vertices.size) {
-                        tour += vertices.toVector(Random.nextInt(vertices.size))
-                    }
-                    pop += tour
-                }
 
-                var seq: Seq[Seq[T]] = (pop.toSeq.map(tour => tour.toSeq))
-                geneticTSP(seq, inversionProb, maxIters)
+                    // pop.add(randomTour(graph))
+                    pop = pop :+ Random.shuffle(vertices.toVector)
+                }
+    
+                geneticTSP(pop, inversionProb, maxIters)
             }
 
             def geneticTSP:Seq[Edge[T]] = {
@@ -435,7 +433,7 @@ object graph
                 for (i <- 1 to maxIters) {
 
                     // for tour in pop do
-                    for (tour <- pop if tour.size > 1) {
+                    for (tour <- pop) {
 
                         // newTour = copy(tour)
                         var newTour: Vector[T] = tour
@@ -543,20 +541,19 @@ object graph
         var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
         // var undirectedGraph = Graph.fromCSVFile(false , "src/main/graph5_271.csv")
-        
-        for (i <- 30 until 41) {
+        print("Graph (2Opt)," + "Tour Length," + "Time")
+        for (i <- 3 until 41) {
             val undirectedGraph = Graph.fromCSVFile(false, "src/main/data/graph_" + i + ".csv")
             val start = System.currentTimeMillis()
-            val tour = undirectedGraph.geneticTSP(100, 0.2f, 20000)
+            val tour = undirectedGraph.greedyTSP
             val end = System.currentTimeMillis()
 
             val onlyVerticesFromTour = tour.toVector.map(edge => edge.source) :+ tour.toVector.head.source
-
-            println("Graph: " + i)
-            println("Tour length: " + undirectedGraph.pathLength(onlyVerticesFromTour.toVector).getOrElse(0L))
+            // print("\n" + i + ",")
+            print("\n" + undirectedGraph.pathLength(onlyVerticesFromTour.toVector).getOrElse(0L) + ",")
 
             val time = (end - start) / 1000.0
-            println("Time (s): " + time)
+            print(time)
         }
     }
 }
