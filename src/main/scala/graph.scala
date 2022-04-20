@@ -6,7 +6,7 @@ import scala.collection.mutable.Stack
 import scala.util.{Random, Try}
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
-
+import scala.collection.mutable.ListBuffer
 object graph
 {
     /*
@@ -37,6 +37,8 @@ object graph
         def heur(graph: Graph[T], tour: Seq[T]): Long
 
         def greedyTSP(initialTour:Seq[T]): Seq[Edge[T]]
+
+        def dynamicTSP:Seq[Edge[T]]
 
         def greedyTSP: Seq[Edge[T]]
 
@@ -510,6 +512,81 @@ object graph
             }
 
 
+            def dynamicTSP:Seq[Edge[T]] = {
+
+                if (vertices.isEmpty || edges.isEmpty) Seq[Edge[T]]()
+
+                // depot is the first vertex
+                var depot: T = vertices.head
+
+                // Map dist = a Map from a Set of vertices and a vertex to a distance (number), initially empty Map
+                var dist = HashMap[(Set[T], T), Long]()
+
+                // parent = a Map from a (Set of vertices and a vertex )to a vertex, initially empty
+                var parent = HashMap[(Set[T], T), T]()
+
+                // List ends = graph.vertices \ depot
+                // Vector of ends of vertices without the depot
+                var ends: Set[T] = vertices.tail
+                
+                // BASE CASE CLEARED!
+                for (k <- ends) {
+                    // dist({k}, k) = graph.edgeW eight(depot, k)
+                    dist += ((Set(k), k) -> getEdgeWeight(depot, k).get)
+
+                    // parent({k}, k) = depot
+                    parent += ((Set(k), k) -> depot)
+                }
+
+                // RECURSIVE CASE
+                for (subSize <- 2 to ends.size) {
+
+                    for (hist <- ends.subsets(subSize)) {
+                        for (k <- hist) {
+
+                            // dist(hist, k) = minBy x∈hist\k = dist(hist \ k, x) + graph.edgeWeight(x, k)
+                            var min = Long.MaxValue
+                            var minVertex = (hist - k).head
+
+                            for (x <- hist - k) {
+                                val current = dist((hist - k, x)) + getEdgeWeight(x, k).get
+                                if (current < min) {
+                                    minVertex = x
+                                    min = current
+                                }
+                            }
+
+                            dist += ((hist, k) -> min)
+                            parent += ((hist, k) -> minVertex)
+                        }
+                    } 
+                }
+                var opt: T = depot
+
+                // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot) x∈ends
+                opt = ends.minBy(x => dist((ends, x)) + getEdgeWeight(x, depot).get)
+
+                // start rewinding the tour
+                var tour: ListBuffer[T] = ListBuffer[T]()
+                // while opt != depot do
+                while (opt != depot) {
+                    val newOne = parent((ends, opt))
+                    tour.append(opt)
+                    ends -= opt
+                    opt = newOne
+                }
+
+                // connect the last edge to the start of the tour
+                tour.append(depot)
+                tour.prepend(depot)
+
+                // return seq of edges
+                for (i <- 0 until tour.size - 1) yield {
+                    val edge = new Edge[T](tour(i), tour(i + 1), getEdgeWeight(tour(i), tour(i + 1)).get)
+                    (edge)
+                }
+            }
+
 
 
 
@@ -542,10 +619,10 @@ object graph
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
         // var undirectedGraph = Graph.fromCSVFile(false , "src/main/graph5_271.csv")
         print("Graph (2Opt)," + "Tour Length," + "Time")
-        for (i <- 3 until 41) {
+        for (i <- 22 until 41) {
             val undirectedGraph = Graph.fromCSVFile(false, "src/main/data/graph_" + i + ".csv")
             val start = System.currentTimeMillis()
-            val tour = undirectedGraph.greedyTSP
+            val tour = undirectedGraph.dynamicTSP
             val end = System.currentTimeMillis()
 
             val onlyVerticesFromTour = tour.toVector.map(edge => edge.source) :+ tour.toVector.head.source
