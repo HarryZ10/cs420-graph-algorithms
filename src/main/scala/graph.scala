@@ -610,7 +610,8 @@ object graph
                 opt = ends.minBy(x => dist((ends, x)) + getEdgeWeight(x, depot).get)
 
                 // start rewinding the tour
-                var tour: mutable.ListBuffer[T] = mutable.ListBuffer[T]()
+                var tour: mutable.ListBuffer[T] = mutable.ListBuffer(depot)
+
                 // while opt != depot do
                 while (opt != depot) {
                     val newOne = parent((ends, opt))
@@ -620,8 +621,9 @@ object graph
                 }
 
                 // connect the last edge to the start of the tour
-                tour.append(depot)
-                tour.prepend(depot)
+                tour.append(opt)
+
+                println(tour)
 
                 // return seq of edges
                 for (i <- 0 until tour.size - 1) yield {
@@ -658,8 +660,8 @@ object graph
     {
         // var nonTrivialGraph = Graph[String](false)
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example3.csv")
 
 
