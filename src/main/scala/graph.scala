@@ -570,76 +570,58 @@ object graph
 
                 // List ends = graph.vertices \ depot
                 // Vector of ends of vertices without the depot
-                var ends: Set[T] = Set[T]()
-
-                var valDist = 0.asInstanceOf[T]
-
-                var distSave: Long = 0L
-
-                // for each vertex in ends do
-                for (vertex <- vertices.tail) ends += vertex
-
-                // remove the depot from ends
-                ends -= depot
-
+                var ends: Set[T] = vertices.tail.toSet
+                
                 // BASE CASE CLEARED!
                 for (k <- ends) {
                     // dist({k}, k) = graph.edgeW eight(depot, k)
-                    dist += ((Set[T](k), k) -> getEdgeWeight(depot, k).get)
+                    dist += ((Set(k), k) -> getEdgeWeight(depot, k).get)
 
                     // parent({k}, k) = depot
-                    parent += (Set(k) -> k) -> depot
+                    parent += ((Set(k), k) -> depot)
                 }
 
                 // RECURSIVE CASE
                 for (subSize <- 2 to ends.size) {
 
                     for (hist <- ends.subsets(subSize)) {
-
                         for (k <- hist) {
-                            
-                            println(dist)
-                            println(parent)
 
                             // dist(hist, k) = minBy x∈hist\k = dist(hist \ k, x) + graph.edgeWeight(x, k)
-                            var x = hist - k
                             var min = Long.MaxValue
-                            var minVertex = k
+                            var minVertex = (hist - k).head
 
-                            for (vertex <- x) {
-                                min = dist((x, vertex)) + getEdgeWeight(vertex, k).get
-                                minVertex = vertex
-
-                                if (min < dist((x, k))) {
-                                    dist += ((x, k) -> min)
-                                    parent += ((x, k) -> minVertex)
+                            for (x <- hist - k) {
+                                val current = dist((hist - k, x)) + getEdgeWeight(x, k).get
+                                if (current < min) {
+                                    minVertex = x
+                                    min = current
                                 }
                             }
+
+                            dist += ((hist, k) -> min)
+                            parent += ((hist, k) -> minVertex)
                         }
-                        
                     } 
                 }
-
-                println("parent: " + parent)
-                println("dist: " + dist)
-                
                 var opt: T = depot
 
                 // opt = argmin dist(ends, x) + graph.edgeW eight(x, depot) x∈ends
-                opt = ends.minBy(x => dist(ends, x) + getEdgeWeight(x, depot).get)
+                opt = ends.minBy(x => dist((ends, x)) + getEdgeWeight(x, depot).get)
 
                 // start rewinding the tour
                 var tour: mutable.ListBuffer[T] = mutable.ListBuffer[T]()
-
                 // while opt != depot do
                 while (opt != depot) {
+                    val newOne = parent((ends, opt))
                     tour.append(opt)
                     ends -= opt
-                    opt = parent(ends, opt)
+                    opt = newOne
                 }
 
                 // connect the last edge to the start of the tour
                 tour.append(depot)
+                tour.prepend(depot)
 
                 // return seq of edges
                 for (i <- 0 until tour.size - 1) yield {
@@ -675,10 +657,20 @@ object graph
     def main(args: Array[String])
     {
         // var nonTrivialGraph = Graph[String](false)
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example3.csv")
 
-        println(undirectedGraph.dynamicTSP)
+
+        var path = undirectedGraph.dynamicTSP
+
+         // add the last edge to end of path
+        var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
+        var length = undirectedGraph.pathLength(onlyVerticesFromPath)
+
+        println(path)
+        println(length)
+
     }
 }
