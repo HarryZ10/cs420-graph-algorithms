@@ -657,9 +657,9 @@ object graph
     def main(args: Array[String])
     {
         // var nonTrivialGraph = Graph[String](false)
-        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
+        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_80_approx736.csv")
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph5_271.csv")
-        // var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
+        var undirectedGraph = Graph.fromCSVFile(false, "src/main/graph_10_319.csv")
         // var undirectedGraph = Graph.fromCSVFile(false, "src/main/Example3.csv")
 
 
