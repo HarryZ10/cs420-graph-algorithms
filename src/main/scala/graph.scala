@@ -213,7 +213,8 @@ object graph
              * @return true if an edge exists between the two given vertices
              */
             def edgeExists(source:T, destination:T):Boolean = {
-                this.edges.get((source, destination)).isDefined
+                if (!isDirected) this.edges.contains((source, destination)) || this.edges.contains((destination, source))
+                else this.edges.contains((source, destination))
             }
 
 
@@ -623,8 +624,6 @@ object graph
                 // connect the last edge to the start of the tour
                 tour.append(opt)
 
-                println(tour)
-
                 // return seq of edges
                 for (i <- 0 until tour.size - 1) yield {
                     val edge = new Edge[T](tour(i), tour(i + 1), getEdgeWeight(tour(i), tour(i + 1)).get)
@@ -671,8 +670,16 @@ object graph
         var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
         var length = undirectedGraph.pathLength(onlyVerticesFromPath)
 
-        println(path)
-        println(length)
+        // check edgeExists in path
+        var edgeExists = path.map(edge => undirectedGraph.edgeExists(edge.source, edge.destination))
+        // println(edgeExists)
+
+        // check in reverse path
+        var reversePath = path.reverse
+
+        // check edgeExists in reverse path
+        var reverseEdgeExists = reversePath.map(edge => undirectedGraph.edgeExists(edge.source, edge.destination))
+        // println(reverseEdgeExists)
 
     }
 }
