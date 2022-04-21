@@ -665,21 +665,24 @@ object graph
 
 
         var path = undirectedGraph.dynamicTSP
+        var reversePath = path.reverse
 
          // add the last edge to end of path
         var onlyVerticesFromPath = path.map(edge => edge.source) :+ path.head.source
         var length = undirectedGraph.pathLength(onlyVerticesFromPath)
 
-        // check edgeExists in path
+        println("The length of the path is: " + length.getOrElse(0L))
+        println("The path is: " + onlyVerticesFromPath.mkString(", "))
+
+        // check for edge existence
         var edgeExists = path.map(edge => undirectedGraph.edgeExists(edge.source, edge.destination))
-        // println(edgeExists)
+        println("The edge exists: " + edgeExists.mkString(", "))
+        
 
-        // check in reverse path
-        var reversePath = path.reverse
+        var edgeExists2 = reversePath.map(edge => undirectedGraph.edgeExists(edge.source, edge.destination))
+        println("The edge exists: " + edgeExists2.mkString(", "))
 
-        // check edgeExists in reverse path
-        var reverseEdgeExists = reversePath.map(edge => undirectedGraph.edgeExists(edge.source, edge.destination))
-        // println(reverseEdgeExists)
+
 
     }
 }
