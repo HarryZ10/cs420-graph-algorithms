@@ -11,14 +11,14 @@ class DirectedGraphTest extends FlatSpec
 	*/
 	"An empty graph" should "be empty" in
 	{
-		val graph = Graph[Int](true)
+		var graph = Graph[Int](true, IndexedSeq(), Seq())
 
 		assert(graph.getVertices.isEmpty)
 	}
 
 	it should "not have edges" in
 	{
-		val graph = Graph[Int](true)
+		var graph = Graph[Int](true, IndexedSeq(), Seq())
 
 		assert(!graph.edgeExists(1,2))
 		assert(!graph.edgeExists(1,1))
